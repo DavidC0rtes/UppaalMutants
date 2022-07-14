@@ -3,8 +3,8 @@
     <output-path>$PROJECT_DIR$/out/artifacts/MutationUppaal_jar</output-path>
     <root id="archive" name="MutationUppaal.jar">
       <element id="module-output" name="MutationUppaal" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/../commons-cli-1.4.jar" path-in-jar="/" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/../antlr-4.9-complete.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="/usr/share/java/commons-cli-1.5.0/commons-cli-1.5.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="/usr/share/java/antlr-4.10.1-complete.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
