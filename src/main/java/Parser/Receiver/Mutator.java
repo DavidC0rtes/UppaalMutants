@@ -304,12 +304,13 @@ public class Mutator {
      */
 
     public void prepareBroadChanOperator() {
-        for (int i = 0; i < parser.getNumBroadChan(); i++) {
+        int counter = 0;
+        for (Map.Entry<String, ArrayList<ChanType>> chan : parser.getChannelEnv().entrySet()) {
 
-            int finalI1 = i;
+            int finalI1 = counter;
             threadsBroadChan.add(new Thread(() -> {
-                UppaalVisitor eval = new UppaalVisitor(this.envTarget, parser.getClockEnv(), finalI1);
-                //UppaalVisitor eval = new UppaalVisitor(this.envTarget, parser.getClockEnv(), finalI1, chan);
+                //UppaalVisitor eval = new UppaalVisitor(this.envTarget, parser.getClockEnv(), finalI1);
+                UppaalVisitor eval = new UppaalVisitor(this.envTarget, parser.getClockEnv(), chan);
                 try {
                     FileWriter writer = new FileWriter(new File(this.fileMutants, "broadChan" + finalI1 + ".xml"));
                     writer.write(eval.visit(tree));
@@ -317,7 +318,8 @@ public class Mutator {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }, "broadChan" + i + ".xml"));
+            }, "broadChan" + counter + ".xml"));
+            counter++;
         }
     }
 

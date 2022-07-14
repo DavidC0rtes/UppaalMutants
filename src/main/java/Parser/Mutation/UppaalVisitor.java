@@ -69,6 +69,12 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         //this.chanEnv = chanEnv;
     }
 
+    public UppaalVisitor(String envTarget, HashMap<String, HashSet<ClockType>> clockEnv, Map.Entry<String, ArrayList<ChanType>> chan) {
+        this.envTarget = envTarget;
+        this.clockEnv = clockEnv;
+        this.chanEnv = chan;
+    }
+
     @Override
     public String visitModel(UppaalParser.ModelContext ctx) {
         String model = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -262,13 +268,15 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         StringBuilder varDecl = new StringBuilder("");
 
         List<UppaalParser.VariableIDContext> variablesId = ctx.variableID();
+        chanEnv.getKey();
+
 
         // Special case: one-liner multiple declarations.
         if (variablesId.size() > 1) {
 
             System.out.printf("%d,%d\n", indexBroadChan, idBroadChanOperator);
-            // Let index catch up with thread's id before proceeding.
-            // Otherwise index will stall.
+            // Let index catch up with thread's id before proceeding...
+            // otherwise, index will stall.
             while (indexBroadChan < idBroadChanOperator) {
                 indexBroadChan++;
             }
