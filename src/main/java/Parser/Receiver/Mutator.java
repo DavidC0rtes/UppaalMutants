@@ -100,6 +100,7 @@ public class Mutator {
         int killedCxl = killedMutants(this.threadsCxl, pathIn, pathVerifyTa, pathQuery);
         int killedCxs = killedMutants(this.threadsCxs, pathIn, pathVerifyTa, pathQuery);
         int killedCcn = killedMutants(this.threadsCcn, pathIn, pathVerifyTa, pathQuery);
+        int killedBroadChan = killedMutants(this.threadsBroadChan, pathIn, pathVerifyTa, pathQuery);
 
         log = log.concat("Tmi killed ");
         log = log.concat(Integer.toString(killedTmi));
@@ -119,8 +120,10 @@ public class Mutator {
         log = log.concat(Integer.toString(killedCxs));
         log = log.concat("\nCcn killed ");
         log = log.concat(Integer.toString(killedCcn));
+        log = log.concat("\nBroadChan killed ");
+        log = log.concat(Integer.toString(killedBroadChan));
         log = log.concat("\nScore ").concat(Integer.toString(
-                killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn
+                killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+killedBroadChan
         )).concat("/").concat(Integer.toString(
                 this.threadsTmi.size()
                         +this.threadsTad.size()
@@ -131,6 +134,7 @@ public class Mutator {
                         +this.threadsCxl.size()
                         +this.threadsCxs.size()
                         +this.threadsCcn.size()
+                        +this.threadsBroadChan.size()
         ));
         log = log.concat("\n");
         return log;
