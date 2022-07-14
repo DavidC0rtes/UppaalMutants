@@ -268,6 +268,12 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         StringBuilder varDecl = new StringBuilder("");
 
         List<UppaalParser.VariableIDContext> variablesId = ctx.variableID();
+
+        for (UppaalParser.VariableIDContext varID: variablesId) {
+            ArrayList<ChanType> _temp = chanEnv.getValue();
+            System.out.println(_temp.ge)
+        }
+
         chanEnv.getKey();
 
 
