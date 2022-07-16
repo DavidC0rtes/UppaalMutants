@@ -216,13 +216,17 @@ variableDecl:   (type variableID (',' variableID)* ';')
 
                         String typeId = $ctx.type().typeId().getText();
 
+                        String prefix = _localctx.type().prefix() != null
+                        		? _localctx.type().prefix().getText()
+                        		: "";
+
                         if(typeId.equals("chan")){
                             List<UppaalParser.VariableIDContext> variablesId = $ctx.variableID();
 
                             for(UppaalParser.VariableIDContext variableId: variablesId){
                                 String chanId = variableId.IDENTIFIER().getText();
                                 int dimensions = variableId.arrayDecl().size();
-                                channelEnv.get(currentEnv).add(new ChanType(chanId, dimensions));
+                                channelEnv.get(currentEnv).add(new ChanType(chanId, dimensions, prefix));
                             }
                         }
                         else if(typeId.equals("clock")){
@@ -349,7 +353,7 @@ locals[ArrayList<String> namesLocations = new ArrayList<String>()]
                             if(typeId.equals("chan")){
                                 String chanId = funcParameter.varFieldDecl().IDENTIFIER().getText();
                                 int dimensions = funcParameter.varFieldDecl().arrayDecl().size();
-                                channelEnv.get(currentEnv).add(new ChanType(chanId, dimensions));
+                                channelEnv.get(currentEnv).add(new ChanType(chanId, dimensions, ""));
                             }
                             else if (typeId.equals("clock")){
                                 String clockId = funcParameter.varFieldDecl().IDENTIFIER().getText();

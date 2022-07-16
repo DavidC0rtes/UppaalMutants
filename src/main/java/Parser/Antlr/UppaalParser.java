@@ -196,11 +196,6 @@ public class UppaalParser extends Parser {
 	    //env will contain as key, "Global" for global declaration and the name of each template
 	    //env will contain as value, and array of string
 
-	public int getNumBroadChan() {
-		return numBroadChan;
-	}
-
-	private int numBroadChan = 0;
 
 	    private String currentEnv = "Global";
 	    private HashMap<String, ArrayList<ChanType>> channelEnv = new HashMap<String, ArrayList<ChanType>>()
@@ -2401,9 +2396,10 @@ public class UppaalParser extends Parser {
 			                    if(!this.isFunctionEnv){
 
 			                        String typeId = _localctx.type().typeId().getText();
-									String prefix = _localctx.type().prefix() != null
-											? _localctx.type().prefix().getText()
-											: "";
+
+			                        String prefix = _localctx.type().prefix() != null
+			                        		? _localctx.type().prefix().getText()
+			                        		: "";
 
 			                        if(typeId.equals("chan")){
 			                            List<UppaalParser.VariableIDContext> variablesId = _localctx.variableID();
@@ -2411,7 +2407,6 @@ public class UppaalParser extends Parser {
 			                            for(UppaalParser.VariableIDContext variableId: variablesId){
 			                                String chanId = variableId.IDENTIFIER().getText();
 			                                int dimensions = variableId.arrayDecl().size();
-
 			                                channelEnv.get(currentEnv).add(new ChanType(chanId, dimensions, prefix));
 			                            }
 			                        }
@@ -2434,12 +2429,6 @@ public class UppaalParser extends Parser {
 		}
 		finally {
 			exitRule();
-		}
-		if (_localctx.type().typeId().getText().equals("chan")) {
-			// Operator doesn't apply to already broadcasted channels.
-			if (_localctx.type().prefix() == null || !_localctx.type().prefix().getText().equals("broadcast")) {
-				numBroadChan += _localctx.variableID().size();
-			}
 		}
 		return _localctx;
 	}
@@ -5091,11 +5080,8 @@ public class UppaalParser extends Parser {
 			                            String typeId = funcParameter.type().typeId().getText();
 			                            if(typeId.equals("chan")){
 			                                String chanId = funcParameter.varFieldDecl().IDENTIFIER().getText();
-			                                String prefix = funcParameter.type().prefix() != null
-													? funcParameter.type().prefix().getText()
-													: "";
-											int dimensions = funcParameter.varFieldDecl().arrayDecl().size();
-			                                channelEnv.get(currentEnv).add(new ChanType(chanId, dimensions, prefix));
+			                                int dimensions = funcParameter.varFieldDecl().arrayDecl().size();
+			                                channelEnv.get(currentEnv).add(new ChanType(chanId, dimensions, ""));
 			                            }
 			                            else if (typeId.equals("clock")){
 			                                String clockId = funcParameter.varFieldDecl().IDENTIFIER().getText();
