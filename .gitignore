@@ -2,6 +2,7 @@ gen
 tags*
 Mutation*
 target/
+target/**/*
 *.class
 pom.xml.tag
 pom.xml.releaseBackup
