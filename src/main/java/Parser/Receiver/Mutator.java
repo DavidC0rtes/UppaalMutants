@@ -305,20 +305,30 @@ public class Mutator {
 
     public void prepareBroadChanOperator() {
         int counter = 0;
-        for (Map.Entry<String, ArrayList<ChanType>> chan : parser.getChannelEnv().entrySet()) {
 
-            int finalI1 = counter;
+        // Only interested in p2p global channels.
+        ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
+        candidates.removeIf(x -> x.getPrefix().equals("broadcast"));
+
+        for (ChanType channel : candidates) {
+
+            int finalCounter = counter;
             threadsBroadChan.add(new Thread(() -> {
-                //UppaalVisitor eval = new UppaalVisitor(this.envTarget, parser.getClockEnv(), finalI1);
-                UppaalVisitor eval = new UppaalVisitor(this.envTarget, parser.getClockEnv(), chan);
+                UppaalVisitor eval = new UppaalVisitor(
+                        this.envTarget,
+                        parser.getClockEnv(),
+                        channel,
+                        null
+                );
+
                 try {
-                    FileWriter writer = new FileWriter(new File(this.fileMutants, "broadChan" + finalI1 + ".xml"));
+                    FileWriter writer = new FileWriter(new File(this.fileMutants, "broadChan" + finalCounter + ".xml"));
                     writer.write(eval.visit(tree));
                     writer.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }, "broadChan" + counter + ".xml"));
+            }, "broadChann" + counter + ".xml"));
             counter++;
         }
     }

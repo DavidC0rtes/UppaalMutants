@@ -1,2 +1,4 @@
 gen
 tags*
+target/
+*.class

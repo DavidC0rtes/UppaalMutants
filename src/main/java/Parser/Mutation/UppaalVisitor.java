@@ -21,7 +21,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private String locationSmi = "";
 
     private HashMap<String, HashSet<ClockType>> clockEnv;
-    private Map.Entry<String, ArrayList<ChanType>> chanEnv;
+    private ChanType bChanTarget, uChanTarget;
     private String currentEnv = "Global";
     private int idCxlOperator = 0;
     private int indexCxl = 0;
@@ -62,17 +62,17 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         this.envTarget = envTarget;
     }
 
-    public UppaalVisitor(String envTarget, HashMap<String, HashSet<ClockType>> clockEnv, int idBroadChanOperator) {
-        this.envTarget = envTarget;
-        this.idBroadChanOperator = idBroadChanOperator;
-        this.indexBroadChan = 0;
-        //this.chanEnv = chanEnv;
-    }
-
-    public UppaalVisitor(String envTarget, HashMap<String, HashSet<ClockType>> clockEnv, Map.Entry<String, ArrayList<ChanType>> chan) {
+     public UppaalVisitor(
+             String envTarget,
+             HashMap<String, HashSet<ClockType>> clockEnv,
+             ChanType bChanTarget,
+             ChanType uChanTarget
+     )
+     {
         this.envTarget = envTarget;
         this.clockEnv = clockEnv;
-        this.chanEnv = chan;
+        this.bChanTarget = bChanTarget;
+        this.uChanTarget = uChanTarget;
     }
 
     @Override
@@ -269,42 +269,33 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
         List<UppaalParser.VariableIDContext> variablesId = ctx.variableID();
 
-        for (UppaalParser.VariableIDContext varID: variablesId) {
-            ArrayList<ChanType> _temp = chanEnv.getValue();
-            System.out.println(_temp.ge)
-        }
+        String type = visit(ctx.type());
 
-        chanEnv.getKey();
+        if (type.equals("chan") && (bChanTarget != null || uChanTarget != null)) {
 
+            String prefixTarget = bChanTarget != null
+                    ? "broadcast"
+                    : "urgent";
 
-        // Special case: one-liner multiple declarations.
-        if (variablesId.size() > 1) {
+            ChanType chanTarget = bChanTarget != null ? bChanTarget : uChanTarget;
+            // Prevent ConcurrentModificationException
+            List<UppaalParser.VariableIDContext> _copy = new ArrayList<>(variablesId);
 
-            System.out.printf("%d,%d\n", indexBroadChan, idBroadChanOperator);
-            // Let index catch up with thread's id before proceeding...
-            // otherwise, index will stall.
-            while (indexBroadChan < idBroadChanOperator) {
-                indexBroadChan++;
-            }
+            for(UppaalParser.VariableIDContext varID : _copy) {
+                if (varID.getText().equals(chanTarget.getName())) {
+                    varDecl.append(prefixTarget +" chan ")
+                            .append(varID.getText())
+                            .append(";\n");
 
-            if (indexBroadChan == idBroadChanOperator) {
-
-                varDecl.append("chan ");
-                UppaalParser.VariableIDContext _temp = variablesId.get(idBroadChanOperator);
-
-                variablesId.remove(idBroadChanOperator );
-
-                varDecl.append(extractChildren(variablesId)).append("\n");
-
-                varDecl.append(visit(ctx.type()) + " ").append(_temp.getText());
+                }
+                // Prevent re-declarations.
+                variablesId.removeIf(x -> x.getText().equals(chanTarget.getName()));
             }
         }
-        else {
-            //if (indexBroadChan == idBroadChanOperator) indexBroadChan++;
 
-            varDecl.append(visit(ctx.type())).append(" ")
-                    .append(extractChildren(variablesId));
-        }
+        varDecl.append(type)
+                .append(" ")
+                .append(extractChildren(variablesId));
 
         varDecl.append(";");
         return varDecl.toString();
@@ -317,11 +308,6 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             type = visit(ctx.prefix()).concat(" ");
         }
 
-        if (this.indexBroadChan == this.idBroadChanOperator) {
-            if (ctx.prefix() == null || !ctx.prefix().getText().equals("broadcast")) {
-                type += "broadcast ";
-            }
-        }
         type = type.concat(visit(ctx.typeId()));
         return type;
     }
