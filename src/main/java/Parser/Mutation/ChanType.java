@@ -4,6 +4,10 @@ public class ChanType {
     private String name;
     private int dimension;
 
+    public String getPrefix() {
+        return prefix;
+    }
+
     private String prefix;
     public ChanType(String nameIn, int dimensionIn, String prefix){
         this.name = nameIn;
