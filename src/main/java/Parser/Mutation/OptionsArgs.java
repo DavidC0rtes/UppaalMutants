@@ -22,6 +22,8 @@ public class OptionsArgs {
     private boolean cxs;
     private boolean ccn;
     private boolean broadChan;
+    private boolean parInt = false;
+    private String chanParInt = ""; // channel to mutate with ParInt
 
     private String env;
     private Options options;
@@ -93,6 +95,11 @@ public class OptionsArgs {
                 false,
                 "Enable broadChan operator. Adds the broadcast prefix to an existing channel."
         );
+        Option parIntOpt = new Option(
+                "parInt",
+                true,
+                "Enable the ParInt operator. Deletes an arbitrary input action."
+        );
 
         Option envOpt = Option.builder("env")
                 .hasArg()
@@ -115,6 +122,7 @@ public class OptionsArgs {
         options.addOption(cxsOpt);
         options.addOption(ccnOpt);
         options.addOption(broadChanOpt);
+        options.addOption(parIntOpt);
         options.addOption(envOpt);
 
         CommandLineParser argsParser = new DefaultParser();
@@ -148,6 +156,9 @@ public class OptionsArgs {
         this.cxs = line.hasOption("cxs");
         this.ccn = line.hasOption("ccn");
         this.broadChan = line.hasOption("broadChan");
+        this.parInt = line.hasOption("parInt");
+        if (line.hasOption("parInt"))
+            this.chanParInt = line.getOptionValue("parInt");
 
         if(line.hasOption("env")){
             this.env = line.getOptionValue("env");
@@ -292,11 +303,16 @@ public class OptionsArgs {
         return ccn;
     }
 
-    public boolean isBroadChan() { return broadChan; }
-
     public void setCcn(boolean ccn) {
         this.ccn = ccn;
     }
+
+    public boolean isBroadChan() { return broadChan; }
+    public void setBroadChan() { this.broadChan = true; }
+
+    public boolean isParInt() { return this.parInt; }
+    public void setParInt() { this.parInt = true; }
+    public String getParIntChan() { return this.chanParInt; }
 
     public String getEnv() {
         return env;

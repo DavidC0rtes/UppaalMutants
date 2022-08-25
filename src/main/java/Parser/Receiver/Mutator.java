@@ -34,6 +34,7 @@ public class Mutator {
     private ArrayList<Thread> threadsCcn;
 
     private ArrayList<Thread> threadsBroadChan;
+    private ArrayList<Thread> threadsParInt = new ArrayList<>();
     private UppaalParser parser;
     private ParseTree tree;
 
@@ -73,6 +74,7 @@ public class Mutator {
         info = info.concat("cxs ").concat(Integer.toString(this.threadsCxs.size())).concat("\n");
         info = info.concat("ccn ").concat(Integer.toString(this.threadsCcn.size())).concat("\n");
         info = info.concat("broadChan ").concat(Integer.toString(this.threadsBroadChan.size())).concat("\n");
+        info = info.concat("parInt ").concat(Integer.toString(this.threadsParInt.size())).concat("\n");
 
         info = info.concat("Total ").concat(Integer.toString(
                 this.threadsTmi.size()
@@ -85,6 +87,7 @@ public class Mutator {
                         +this.threadsCxs.size()
                         +this.threadsCcn.size()
                         +this.threadsBroadChan.size()
+                        +this.threadsParInt.size()
         )).concat("\n");
         return info;
     }
@@ -101,6 +104,7 @@ public class Mutator {
         int killedCxs = killedMutants(this.threadsCxs, pathIn, pathVerifyTa, pathQuery);
         int killedCcn = killedMutants(this.threadsCcn, pathIn, pathVerifyTa, pathQuery);
         int killedBroadChan = killedMutants(this.threadsBroadChan, pathIn, pathVerifyTa, pathQuery);
+        int killedParInt = killedMutants(this.threadsParInt, pathIn, pathVerifyTa, pathQuery);
 
         log = log.concat("Tmi killed ");
         log = log.concat(Integer.toString(killedTmi));
@@ -122,6 +126,8 @@ public class Mutator {
         log = log.concat(Integer.toString(killedCcn));
         log = log.concat("\nBroadChan killed ");
         log = log.concat(Integer.toString(killedBroadChan));
+        log = log.concat("\nParInt killed ");
+        log = log.concat(Integer.toString(killedParInt));
         log = log.concat("\nScore ").concat(Integer.toString(
                 killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+killedBroadChan
         )).concat("/").concat(Integer.toString(
@@ -135,6 +141,7 @@ public class Mutator {
                         +this.threadsCxs.size()
                         +this.threadsCcn.size()
                         +this.threadsBroadChan.size()
+                        +this.threadsParInt.size()
         ));
         log = log.concat("\n");
         return log;
@@ -179,6 +186,7 @@ public class Mutator {
         this.runThreads(this.threadsCxs);
         this.runThreads(this.threadsCcn);
         this.runThreads(this.threadsBroadChan);
+        this.runThreads(this.threadsParInt);
     }
 
     public void runThreads(ArrayList<Thread> threads){
@@ -250,6 +258,7 @@ public class Mutator {
         this.joinThreads(this.threadsCxs);
         this.joinThreads(this.threadsCcn);
         this.joinThreads(this.threadsBroadChan);
+        this.joinThreads(this.threadsParInt);
     }
 
 
@@ -322,6 +331,7 @@ public class Mutator {
                         this.envTarget,
                         parser.getClockEnv(),
                         channel,
+                        null,
                         null
                 );
 
@@ -334,6 +344,29 @@ public class Mutator {
                 }
             }, "broadChann" + counter + ".xml"));
             counter++;
+        }
+    }
+
+    public void prepareParIntOperator() {
+        // ToDo: check if chan is an actual channel in the model.
+        ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
+        for(ChanType channel : candidates) {
+            threadsParInt.add(new Thread(() -> {
+                UppaalVisitor eval = new UppaalVisitor(
+                        this.envTarget,
+                        parser.getClockEnv(),
+                        null,
+                        null,
+                        channel
+                );
+                try {
+                    FileWriter writer = new FileWriter(new File(this.fileMutants, "parInt_" + channel.getName() + ".xml"));
+                    writer.write(eval.visit(tree));
+                    writer.close();
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
+            },"parInt_" + channel.getName() + ".xml"));
         }
     }
 
@@ -714,6 +747,5 @@ public class Mutator {
             }, "ccn"+ idCcn +".xml"));
         }
     }
-
 }
 

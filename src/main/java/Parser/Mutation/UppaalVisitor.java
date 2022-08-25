@@ -21,7 +21,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private String locationSmi = "";
 
     private HashMap<String, HashSet<ClockType>> clockEnv;
-    private ChanType bChanTarget, uChanTarget;
+    private ChanType bChanTarget, uChanTarget, parIntTarget;
     private String currentEnv = "Global";
     private int idCxlOperator = 0;
     private int indexCxl = 0;
@@ -66,13 +66,15 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
              String envTarget,
              HashMap<String, HashSet<ClockType>> clockEnv,
              ChanType bChanTarget,
-             ChanType uChanTarget
+             ChanType uChanTarget,
+             ChanType parIntTarget
      )
      {
         this.envTarget = envTarget;
         this.clockEnv = clockEnv;
         this.bChanTarget = bChanTarget;
         this.uChanTarget = uChanTarget;
+        this.parIntTarget = parIntTarget;
     }
 
     @Override
@@ -923,6 +925,10 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         String label = ctx.OPEN_SYNC().getText();
         if(ctx.expr()!=null){
             label = label.concat(visit(ctx.expr()));
+            String chanName = label.substring(0, label.length()-1);
+            if (parIntTarget != null && chanName.equals(parIntTarget.getName()) ) {
+                return "";
+            }
         }
         label = label.concat("?</label>");
         return label;
