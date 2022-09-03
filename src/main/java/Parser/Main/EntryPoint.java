@@ -9,6 +9,7 @@ import Parser.Receiver.Mutator;
 import Parser.Mutation.OptionsArgs;
 
 import org.apache.commons.cli.*;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -19,13 +20,16 @@ import java.util.*;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-
+import org.slf4j.Logger;
 //////////////////////////////////////////////////////////////////////
 
 public class EntryPoint {
 
+    private static final Logger logger = LoggerFactory.getLogger(EntryPoint.class);
+
     public static void main(String[] args)  {
 
+        logger.debug("HELLO WORLD");
         long startTime = System.currentTimeMillis();
         String output = "";
         OptionsArgs opt = new OptionsArgs();
