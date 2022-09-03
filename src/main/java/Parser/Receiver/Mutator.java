@@ -348,7 +348,6 @@ public class Mutator {
     }
 
     public void prepareParIntOperator() {
-        // ToDo: check if chan is an actual channel in the model.
         ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
         for(ChanType channel : candidates) {
             threadsParInt.add(new Thread(() -> {

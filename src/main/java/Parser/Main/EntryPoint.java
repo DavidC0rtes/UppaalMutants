@@ -102,7 +102,7 @@ public class EntryPoint {
         Command tadSyncMutant = new TadSync(mutator, opt.getTadSync());
         Command tmiMutant = new Tmi(mutator);
         Command broadChanMutant = new BroadChan(mutator);
-        Command parIntMutant = new ParInt(mutator, opt.getParIntChan());
+        Command parIntMutant = new ParInt(mutator);
 
         Switch mySwitch = new Switch(tmiMutant, tadMutant, tadSyncMutant, tadRandomSyncMutant,
                 smiMutant, smiNoRedundant,

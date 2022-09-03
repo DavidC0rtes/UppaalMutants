@@ -23,7 +23,6 @@ public class OptionsArgs {
     private boolean ccn;
     private boolean broadChan;
     private boolean parInt = false;
-    private String chanParInt = ""; // channel to mutate with ParInt
 
     private String env;
     private Options options;
@@ -157,8 +156,6 @@ public class OptionsArgs {
         this.ccn = line.hasOption("ccn");
         this.broadChan = line.hasOption("broadChan");
         this.parInt = line.hasOption("parInt");
-        if (line.hasOption("parInt"))
-            this.chanParInt = line.getOptionValue("parInt");
 
         if(line.hasOption("env")){
             this.env = line.getOptionValue("env");
@@ -312,8 +309,6 @@ public class OptionsArgs {
 
     public boolean isParInt() { return this.parInt; }
     public void setParInt() { this.parInt = true; }
-    public String getParIntChan() { return this.chanParInt; }
-
     public String getEnv() {
         return env;
     }

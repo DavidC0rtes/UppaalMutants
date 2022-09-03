@@ -8,9 +8,8 @@ public class ParInt implements Command {
     private final Mutator mutantOperator;
     private String chanTarget;
 
-    public ParInt(Mutator mutantOperator, String chanTarget) {
+    public ParInt(Mutator mutantOperator) {
         this.mutantOperator = mutantOperator;
-        this.chanTarget = chanTarget;
     }
     @Override
     public void execute() {
