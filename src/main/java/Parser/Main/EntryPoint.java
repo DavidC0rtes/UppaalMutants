@@ -28,8 +28,6 @@ public class EntryPoint {
     private static final Logger logger = LoggerFactory.getLogger(EntryPoint.class);
 
     public static void main(String[] args)  {
-
-        logger.debug("HELLO WORLD");
         long startTime = System.currentTimeMillis();
         String output = "";
         OptionsArgs opt = new OptionsArgs();
@@ -91,9 +89,14 @@ public class EntryPoint {
         try {
             mutator = new Mutator(opt.getModelFile().getAbsolutePath(), fileMutants, opt.getEnv());
         }catch (IOException e){
-            e.printStackTrace();
+            logger.error(
+                    "File {} does not exist: {}",
+                    opt.getModelFile(),
+                    e.toString()
+            );
             System.exit(1);
         }
+
 
         Command ccnMutant = new Ccn(mutator);
         Command cxlMutant = new Cxl(mutator);
