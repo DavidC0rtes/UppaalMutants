@@ -10,6 +10,8 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -38,6 +40,7 @@ public class Mutator {
     private UppaalParser parser;
     private ParseTree tree;
 
+    private static final Logger logger = LoggerFactory.getLogger(Mutator.class);
     public Mutator(String modelFile, File fileMutants, String envTarget) throws IOException {
 
         this.fileMutants = fileMutants;
@@ -335,12 +338,10 @@ public class Mutator {
                         null
                 );
 
-                try {
-                    FileWriter writer = new FileWriter(new File(this.fileMutants, "broadChan" + finalCounter + ".xml"));
+                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "broadChan" + finalCounter + ".xml"))) {
                     writer.write(eval.visit(tree));
-                    writer.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    logger.error("Error writing to file:{}", e.toString());
                 }
             }, "broadChann" + counter + ".xml"));
             counter++;
@@ -358,12 +359,10 @@ public class Mutator {
                         null,
                         channel
                 );
-                try {
-                    FileWriter writer = new FileWriter(new File(this.fileMutants, "parInt_" + channel.getName() + ".xml"));
+                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parInt_" + channel.getName() + ".xml"))){
                     writer.write(eval.visit(tree));
-                    writer.close();
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    logger.error("Error writing to file {}", ex.toString());
                 }
             },"parInt_" + channel.getName() + ".xml"));
         }

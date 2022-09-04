@@ -77,7 +77,7 @@ public class EntryPoint {
         File fileMutants = new File(path);
         fileMutants.mkdirs();
         if(!fileMutants.exists()){
-            System.out.println("there was an error creating the directory indicated " +
+            logger.debug("there was an error creating the directory indicated " +
                     "\nwith the path option [-p <path>]. You may have indicated a wrong route. " +
                     "\nPress enter to exit.");
             Scanner scan = new Scanner(System.in);
@@ -126,10 +126,7 @@ public class EntryPoint {
         if(opt.isCxs()) mySwitch.cxs();
         if(opt.isCcn()) mySwitch.ccn();
         if(opt.isBroadChan()) mySwitch.broadChan();
-        if(opt.isParInt()) {
-            System.out.println("DDJEJDIE");
-            mySwitch.parInt();
-        }
+        if(opt.isParInt()) mySwitch.parInt();
 
 
 
