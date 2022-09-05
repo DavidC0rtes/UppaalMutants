@@ -36,6 +36,7 @@ public class EntryPoint {
             opt.parseArgs(args);
         } catch (ParseException e) {
             opt.printHelp();
+            logger.debug(e.toString());
             System.exit(1);
         } catch (NoModelError e) {
             System.out.println("-m,--model <path> is a required option" +
@@ -127,8 +128,6 @@ public class EntryPoint {
         if(opt.isCcn()) mySwitch.ccn();
         if(opt.isBroadChan()) mySwitch.broadChan();
         if(opt.isParInt()) mySwitch.parInt();
-
-
 
         mutator.runOperators();
         try {

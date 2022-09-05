@@ -96,7 +96,7 @@ public class OptionsArgs {
         );
         Option parIntOpt = new Option(
                 "parInt",
-                true,
+                false,
                 "Enable the ParInt operator. Deletes an arbitrary input action."
         );
 

@@ -37,6 +37,7 @@ public class Mutator {
 
     private ArrayList<Thread> threadsBroadChan;
     private ArrayList<Thread> threadsParInt = new ArrayList<>();
+    private ArrayList<Thread> threadsParSeq = new ArrayList<>();
     private UppaalParser parser;
     private ParseTree tree;
 
@@ -78,6 +79,7 @@ public class Mutator {
         info = info.concat("ccn ").concat(Integer.toString(this.threadsCcn.size())).concat("\n");
         info = info.concat("broadChan ").concat(Integer.toString(this.threadsBroadChan.size())).concat("\n");
         info = info.concat("parInt ").concat(Integer.toString(this.threadsParInt.size())).concat("\n");
+        info = info.concat("parSeq ").concat(Integer.toString(this.threadsParSeq.size())).concat("\n");
 
         info = info.concat("Total ").concat(Integer.toString(
                 this.threadsTmi.size()
@@ -91,6 +93,7 @@ public class Mutator {
                         +this.threadsCcn.size()
                         +this.threadsBroadChan.size()
                         +this.threadsParInt.size()
+                        +this.threadsParSeq.size()
         )).concat("\n");
         return info;
     }
@@ -108,6 +111,7 @@ public class Mutator {
         int killedCcn = killedMutants(this.threadsCcn, pathIn, pathVerifyTa, pathQuery);
         int killedBroadChan = killedMutants(this.threadsBroadChan, pathIn, pathVerifyTa, pathQuery);
         int killedParInt = killedMutants(this.threadsParInt, pathIn, pathVerifyTa, pathQuery);
+        int killedParSeq = killedMutants(this.threadsParSeq, pathIn, pathVerifyTa, pathQuery);
 
         log = log.concat("Tmi killed ");
         log = log.concat(Integer.toString(killedTmi));
@@ -131,8 +135,11 @@ public class Mutator {
         log = log.concat(Integer.toString(killedBroadChan));
         log = log.concat("\nParInt killed ");
         log = log.concat(Integer.toString(killedParInt));
+        log = log.concat("\nParSeq killed ");
+        log = log.concat(Integer.toString(killedParSeq));
         log = log.concat("\nScore ").concat(Integer.toString(
-                killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+killedBroadChan
+                killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+
+                        killedBroadChan + killedParInt + killedParSeq
         )).concat("/").concat(Integer.toString(
                 this.threadsTmi.size()
                         +this.threadsTad.size()
@@ -145,6 +152,7 @@ public class Mutator {
                         +this.threadsCcn.size()
                         +this.threadsBroadChan.size()
                         +this.threadsParInt.size()
+                        +this.threadsParSeq.size()
         ));
         log = log.concat("\n");
         return log;
@@ -262,6 +270,7 @@ public class Mutator {
         this.joinThreads(this.threadsCcn);
         this.joinThreads(this.threadsBroadChan);
         this.joinThreads(this.threadsParInt);
+        this.joinThreads(this.threadsParSeq);
     }
 
 
@@ -334,8 +343,7 @@ public class Mutator {
                         this.envTarget,
                         parser.getClockEnv(),
                         channel,
-                        null,
-                        null
+                        "broadChan"
                 );
 
                 try (FileWriter writer = new FileWriter(new File(this.fileMutants, "broadChan" + finalCounter + ".xml"))) {
@@ -355,9 +363,8 @@ public class Mutator {
                 UppaalVisitor eval = new UppaalVisitor(
                         this.envTarget,
                         parser.getClockEnv(),
-                        null,
-                        null,
-                        channel
+                        channel,
+                        "parInt"
                 );
                 try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parInt_" + channel.getName() + ".xml"))){
                     writer.write(eval.visit(tree));
@@ -365,6 +372,20 @@ public class Mutator {
                     logger.error("Error writing to file {}", ex.toString());
                 }
             },"parInt_" + channel.getName() + ".xml"));
+        }
+    }
+
+    public void prepareParSeqOperator() {
+        ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
+        for(ChanType channel : candidates) {
+            threadsParSeq.add(new Thread(() -> {
+                UppaalVisitor eval = new UppaalVisitor(
+                        this.envTarget,
+                        parser.getClockEnv(),
+                        channel,
+                        "parSeq"
+                );
+            }));
         }
     }
 

@@ -3,15 +3,14 @@ package Parser.OperatorCommands;
 import Parser.Command.Command;
 import Parser.Receiver.Mutator;
 
-public class ParInt implements Command {
-
+public class ParSeq implements Command {
     private final Mutator mutantOperator;
 
-    public ParInt(Mutator mutantOperator) {
-        this.mutantOperator = mutantOperator;
+    public ParSeq(Mutator mo) {
+        mutantOperator = mo;
     }
     @Override
     public void execute() {
-        this.mutantOperator.prepareParIntOperator();
+
     }
 }

@@ -21,7 +21,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private String locationSmi = "";
 
     private HashMap<String, HashSet<ClockType>> clockEnv;
-    private ChanType bChanTarget, uChanTarget, parIntTarget;
+    private ChanType chanTarget;
     private String currentEnv = "Global";
     private int idCxlOperator = 0;
     private int indexCxl = 0;
@@ -34,7 +34,8 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private boolean isControllable = false;
     private boolean isClockLeft = false;
     private boolean isClockRight = false;
-    private String envTarget;
+    private String envTarget, ntaOperator;
+
 
     public UppaalVisitor (int tmiOperator, String templateTad, String sourceTad, String targetTad, String outputTad, String locationSmi,
                           HashMap<String, HashSet<ClockType>> clockEnv, int idCxlOperator, int idCxsOperator, int idCcnOperator,
@@ -62,19 +63,24 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         this.envTarget = envTarget;
     }
 
+    /**
+     * Method overloading for UppaalVisitor constructor, meant to be used for operators
+     * that directly affect channels.
+     * @param envTarget Target template (Global).
+     * @param clockEnv Clocks environment.
+     * @param chanTarget Target channel.
+     */
      public UppaalVisitor(
              String envTarget,
              HashMap<String, HashSet<ClockType>> clockEnv,
-             ChanType bChanTarget,
-             ChanType uChanTarget,
-             ChanType parIntTarget
+             ChanType chanTarget,
+             String operator
      )
      {
         this.envTarget = envTarget;
         this.clockEnv = clockEnv;
-        this.bChanTarget = bChanTarget;
-        this.uChanTarget = uChanTarget;
-        this.parIntTarget = parIntTarget;
+        this.chanTarget = chanTarget;
+        this.ntaOperator = operator;
     }
 
     @Override
@@ -273,13 +279,16 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
         String type = visit(ctx.type());
 
-        if (type.equals("chan") && (bChanTarget != null || uChanTarget != null)) {
+        if (type.equals("chan") && this.chanTarget != null ) {
 
-            String prefixTarget = bChanTarget != null
-                    ? "broadcast"
-                    : "urgent";
+            String prefixTarget = "";
+            if (ntaOperator.equals("broadChan")) {
+                prefixTarget = "broadcast";
+            }
+            if (ntaOperator.equals("urgChan")) {
+                prefixTarget = "urgent";
+            }
 
-            ChanType chanTarget = bChanTarget != null ? bChanTarget : uChanTarget;
             // Prevent ConcurrentModificationException
             List<UppaalParser.VariableIDContext> _copy = new ArrayList<>(variablesId);
 
@@ -926,7 +935,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         if(ctx.expr()!=null){
             label = label.concat(visit(ctx.expr()));
             String chanName = label.substring(0, label.length()-1);
-            if (parIntTarget != null && chanName.equals(parIntTarget.getName()) ) {
+            if (chanName.equals(this.chanTarget.getName()) && this.ntaOperator.equals("parInt")) {
                 return "";
             }
         }
