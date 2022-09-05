@@ -3,6 +3,7 @@ tags*
 Mutation*
 target/
 target/**/*
+out
 *.class
 pom.xml.tag
 pom.xml.releaseBackup
