@@ -13,10 +13,12 @@ public class Switch {
     private Command ccn;
     private Command broadChan;
     private Command parInt;
+    private Command parSeq;
 
     public Switch(Command tmi, Command tad, Command tadSync, Command tadRandomSync,
                   Command smi, Command smiNoRedundant,
-                  Command cxl, Command cxs, Command ccn, Command broadChan, Command parInt) {
+                  Command cxl, Command cxs, Command ccn, Command broadChan, Command parInt,
+                  Command parSeq) {
         this.tmi = tmi;
         this.tad = tad;
         this.tadSync = tadSync;
@@ -28,6 +30,7 @@ public class Switch {
         this.ccn = ccn;
         this.broadChan = broadChan;
         this.parInt = parInt;
+        this.parSeq = parSeq;
     }
 
     public void tmi() {
@@ -68,4 +71,6 @@ public class Switch {
 
     public void broadChan() { broadChan.execute(); }
     public void parInt() { parInt.execute(); }
+
+    public void parSeq() { parSeq.execute(); }
 }

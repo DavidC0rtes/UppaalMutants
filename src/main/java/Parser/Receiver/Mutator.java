@@ -198,6 +198,7 @@ public class Mutator {
         this.runThreads(this.threadsCcn);
         this.runThreads(this.threadsBroadChan);
         this.runThreads(this.threadsParInt);
+        this.runThreads(this.threadsParSeq);
     }
 
     public void runThreads(ArrayList<Thread> threads){
@@ -385,7 +386,12 @@ public class Mutator {
                         channel,
                         "parSeq"
                 );
-            }));
+                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parSeq_"+channel.getName() + ".xml"))){
+                    writer.write(eval.visit(tree));
+                } catch (IOException ex) {
+                    logger.error("Error writing to file {}", ex.toString());
+                }
+            }, "parSeq_"+channel.getName() + ".xml"));
         }
     }
 

@@ -111,10 +111,11 @@ public class EntryPoint {
         Command tmiMutant = new Tmi(mutator);
         Command broadChanMutant = new BroadChan(mutator);
         Command parIntMutant = new ParInt(mutator);
+        Command parSeqMutant = new ParSeq(mutator);
 
         Switch mySwitch = new Switch(tmiMutant, tadMutant, tadSyncMutant, tadRandomSyncMutant,
                 smiMutant, smiNoRedundant,
-                cxlMutant, cxsMutant, ccnMutant, broadChanMutant, parIntMutant);
+                cxlMutant, cxsMutant, ccnMutant, broadChanMutant, parIntMutant, parSeqMutant);
 
 
         if(opt.isTmi()) mySwitch.tmi();
@@ -128,6 +129,7 @@ public class EntryPoint {
         if(opt.isCcn()) mySwitch.ccn();
         if(opt.isBroadChan()) mySwitch.broadChan();
         if(opt.isParInt()) mySwitch.parInt();
+        if(opt.isParSeq()) mySwitch.parSeq();
 
         mutator.runOperators();
         try {

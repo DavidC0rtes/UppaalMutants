@@ -34,7 +34,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private boolean isControllable = false;
     private boolean isClockLeft = false;
     private boolean isClockRight = false;
-    private String envTarget, ntaOperator;
+    private String envTarget, ntaOperator, newClock;
 
 
     public UppaalVisitor (int tmiOperator, String templateTad, String sourceTad, String targetTad, String outputTad, String locationSmi,
@@ -81,8 +81,15 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         this.clockEnv = clockEnv;
         this.chanTarget = chanTarget;
         this.ntaOperator = operator;
+
+        if (this.ntaOperator.equals("parSeq")) {
+            setNewClock();
+        }
     }
 
+    private void setNewClock() {
+         newClock = String.format("dummy-%d", System.currentTimeMillis() / 1000L);
+    }
     @Override
     public String visitModel(UppaalParser.ModelContext ctx) {
         String model = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
@@ -122,6 +129,10 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     public String visitDeclaration(UppaalParser.DeclarationContext ctx) {
         String declaration = ctx.OPEN_DECLARATION().getText();
         declaration = declaration.concat(visit(ctx.declContent()));
+        if (this.ntaOperator.equals("parSeq") && ctx.depth() == 3) {
+            String newclockDeclr = String.format("clock %s;\n", this.newClock);
+            declaration = declaration.concat(newclockDeclr);
+        }
         //.println(declaration);
         declaration = declaration.concat(ctx.CLOSE_DECLARATION().getText());
         return declaration;
@@ -866,11 +877,23 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         List<UppaalParser.LabelTransSyncInputContext> labelsInput = ctx.labelTransSyncInput();
         for(UppaalParser.LabelTransSyncInputContext label: labelsInput){
             transition = transition.concat(visit(label)).concat("\n");
+
+            if (ntaOperator.equals("parSeq") && label.expr().getText().equals(chanTarget.getName())) {
+                transition = transition.concat(
+                        String.format("<label kind='guard'>%s%s%d</label>\n", newClock, "&gt;", 1)
+                );
+            }
         }
 
         List<UppaalParser.LabelTransSyncOutputContext> labelsOutput = ctx.labelTransSyncOutput();
-        for(UppaalParser.LabelTransSyncOutputContext label: labelsOutput){
+        for(UppaalParser.LabelTransSyncOutputContext label: labelsOutput) {
             transition = transition.concat(visit(label)).concat("\n");
+
+            if (ntaOperator.equals("parSeq") && label.expr().getText().equals(chanTarget.getName())) {
+                transition = transition.concat(
+                        String.format("<label kind='update'>%s%s%d</label>\n", newClock, ":=", 1)
+                );
+            }
         }
 
         List<UppaalParser.LabelTransGuardContext> labelsGuard = ctx.labelTransGuard();
@@ -935,7 +958,11 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         if(ctx.expr()!=null){
             label = label.concat(visit(ctx.expr()));
             String chanName = label.substring(0, label.length()-1);
-            if (chanName.equals(this.chanTarget.getName()) && this.ntaOperator.equals("parInt")) {
+
+            if (
+                    chanName.equals(this.chanTarget.getName()) &&
+                    (this.ntaOperator.equals("parInt") || this.ntaOperator.equals("parSeq"))
+            ) {
                 return "";
             }
         }

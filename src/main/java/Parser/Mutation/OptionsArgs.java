@@ -22,8 +22,7 @@ public class OptionsArgs {
     private boolean cxs;
     private boolean ccn;
     private boolean broadChan;
-    private boolean parInt = false;
-
+    private boolean parInt, parSeq = false;
     private String env;
     private Options options;
 
@@ -99,6 +98,11 @@ public class OptionsArgs {
                 false,
                 "Enable the ParInt operator. Deletes an arbitrary input action."
         );
+        Option parSeqOpt = new Option(
+                "parSeq",
+                false,
+                "Enables the ParSeq operator. Two parallel actions become sequential."
+        );
 
         Option envOpt = Option.builder("env")
                 .hasArg()
@@ -122,6 +126,7 @@ public class OptionsArgs {
         options.addOption(ccnOpt);
         options.addOption(broadChanOpt);
         options.addOption(parIntOpt);
+        options.addOption(parSeqOpt);
         options.addOption(envOpt);
 
         CommandLineParser argsParser = new DefaultParser();
@@ -156,6 +161,8 @@ public class OptionsArgs {
         this.ccn = line.hasOption("ccn");
         this.broadChan = line.hasOption("broadChan");
         this.parInt = line.hasOption("parInt");
+        this.parSeq = line.hasOption("parSeq");
+
 
         if(line.hasOption("env")){
             this.env = line.getOptionValue("env");
@@ -309,6 +316,7 @@ public class OptionsArgs {
 
     public boolean isParInt() { return this.parInt; }
     public void setParInt() { this.parInt = true; }
+    public boolean isParSeq() {return this.parSeq;}
     public String getEnv() {
         return env;
     }

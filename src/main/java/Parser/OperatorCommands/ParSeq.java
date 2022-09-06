@@ -11,6 +11,6 @@ public class ParSeq implements Command {
     }
     @Override
     public void execute() {
-
+        mutantOperator.prepareParSeqOperator();
     }
 }
