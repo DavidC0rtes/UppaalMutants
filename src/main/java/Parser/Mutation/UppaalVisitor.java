@@ -956,14 +956,13 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         this.isControllable = true;
         String label = ctx.OPEN_SYNC().getText();
         if(ctx.expr()!=null){
-            label = label.concat(visit(ctx.expr()));
-            String chanName = label.substring(0, label.length()-1);
+            String chanName = visit(ctx.expr());
+            label = label.concat(chanName);
 
-            if (
-                    chanName.equals(this.chanTarget.getName()) &&
-                    (this.ntaOperator.equals("parInt") || this.ntaOperator.equals("parSeq"))
-            ) {
-                return "";
+            if (chanName.equals(this.chanTarget.getName())) {
+                if (this.ntaOperator.equals("parInt") || this.ntaOperator.equals("parSeq")) {
+                    return "";
+                }
             }
         }
         label = label.concat("?</label>");
