@@ -13,4 +13,9 @@ public class Smi implements Command {
     public void execute(){
         this.mutantOperator.prepareSmiOperator();
     }
+
+    @Override
+    public String getName() {
+        return "smi";
+    }
 }

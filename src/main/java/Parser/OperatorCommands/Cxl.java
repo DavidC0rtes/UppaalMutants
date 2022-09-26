@@ -13,4 +13,9 @@ public class Cxl implements Command {
     public void execute(){
         this.mutantOperator.prepareCxlOperator();
     }
+
+    @Override
+    public String getName() {
+        return "cxl";
+    }
 }

@@ -13,4 +13,9 @@ public class ParSeq implements Command {
     public void execute() {
         mutantOperator.prepareParSeqOperator();
     }
+
+    @Override
+    public String getName() {
+        return "parSeq";
+    }
 }

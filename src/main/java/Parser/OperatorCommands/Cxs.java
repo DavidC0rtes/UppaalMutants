@@ -13,4 +13,9 @@ public class Cxs implements Command {
     public void execute(){
         this.mutantOperator.prepareCxsOperator();
     }
+
+    @Override
+    public String getName() {
+        return "cxs";
+    }
 }

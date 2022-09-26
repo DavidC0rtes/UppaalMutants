@@ -17,4 +17,9 @@ public class TadSync implements Command {
             this.mutantOperator.prepareTadSyncOperator(this.chanSync);
         }
     }
+
+    @Override
+    public String getName() {
+        return "tadSync";
+    }
 }

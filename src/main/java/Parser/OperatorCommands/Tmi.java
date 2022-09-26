@@ -13,4 +13,9 @@ public class Tmi implements Command {
     public void execute(){
         this.mutantOperator.prepareTmiOperator();
     }
+
+    @Override
+    public String getName() {
+        return "tmi";
+    }
 }

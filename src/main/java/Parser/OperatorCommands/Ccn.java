@@ -13,4 +13,9 @@ public class Ccn implements Command {
     public void execute(){
         this.mutantOperator.prepareCcnOperator();
     }
+
+    @Override
+    public String getName() {
+        return "ccn";
+    }
 }

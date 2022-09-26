@@ -3,21 +3,24 @@ package Parser.OperatorCommands;
 import Parser.Command.Command;
 import Parser.Receiver.Mutator;
 
-public class BroadChan implements Command {
+import java.util.Arrays;
 
+public class MaskVarClocks implements Command {
     private final Mutator mutantOperator;
+    private String clock;
 
-    public BroadChan(Mutator mutantOperator) {
+    public MaskVarClocks(Mutator mutantOperator, String[] args) {
         this.mutantOperator = mutantOperator;
+        this.clock = args[0];
     }
 
     @Override
     public void execute() {
-        this.mutantOperator.prepareBroadChanOperator();
+        mutantOperator.prepareMaskVarClocksOp(clock);
     }
 
     @Override
     public String getName() {
-        return "broadChan";
+        return "maskVarClocks";
     }
 }

@@ -13,4 +13,9 @@ public class TadRandomSync implements Command {
     public void execute(){
         this.mutantOperator.prepareTadRandomSyncOperator();
     }
+
+    @Override
+    public String getName() {
+        return "tadRandomSync";
+    }
 }

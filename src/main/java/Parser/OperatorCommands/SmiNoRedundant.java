@@ -13,4 +13,9 @@ public class SmiNoRedundant implements Command {
     public void execute(){
         this.mutantOperator.prepareSmiNoRedundantOperator();
     }
+
+    @Override
+    public String getName() {
+        return "smiNoRedundant";
+    }
 }

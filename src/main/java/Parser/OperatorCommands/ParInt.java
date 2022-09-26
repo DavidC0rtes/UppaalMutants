@@ -14,4 +14,9 @@ public class ParInt implements Command {
     public void execute() {
         this.mutantOperator.prepareParIntOperator();
     }
+
+    @Override
+    public String getName() {
+        return "parInt";
+    }
 }

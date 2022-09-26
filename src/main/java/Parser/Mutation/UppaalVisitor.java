@@ -34,7 +34,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private boolean isControllable = false;
     private boolean isClockLeft = false;
     private boolean isClockRight = false;
-    private String envTarget, ntaOperator, newClock;
+    private String envTarget, ntaOperator, newClock, clockTarget;
 
 
     public UppaalVisitor (int tmiOperator, String templateTad, String sourceTad, String targetTad, String outputTad, String locationSmi,
@@ -74,6 +74,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
              String envTarget,
              HashMap<String, HashSet<ClockType>> clockEnv,
              ChanType chanTarget,
+             String clockTarget,
              String operator
      )
      {
@@ -81,6 +82,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         this.clockEnv = clockEnv;
         this.chanTarget = chanTarget;
         this.ntaOperator = operator;
+        this.clockTarget = clockTarget;
 
         if (this.ntaOperator.equals("parSeq")) {
             setNewClock();
@@ -132,6 +134,11 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         if (this.ntaOperator.equals("parSeq") && ctx.depth() == 3) {
             String newclockDeclr = String.format("clock %s;\n", this.newClock);
             declaration = declaration.concat(newclockDeclr);
+        }
+
+        if (this.ntaOperator.equals("maskVarClocks") && this.envTarget.equals(currentEnv)) {
+            String maskedClock = String.format("clock %s;\n", this.clockTarget);
+            declaration = declaration.concat(maskedClock);
         }
         //.println(declaration);
         declaration = declaration.concat(ctx.CLOSE_DECLARATION().getText());
@@ -705,6 +712,10 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
     @Override
     public String visitTemplate(UppaalParser.TemplateContext ctx) {
+         /*for (ClockType c : this.clockEnv.get(this.currentEnv)) {
+             System.out.println(c.getName() + " "+  this.currentEnv);
+         }*/
+        //System.out.println(this.clockEnv.get(this.currentEnv).toArray().toString()+" "+this.currentEnv);
         String template = "<template>\n";
         template = template.concat(visit(ctx.tempContent()));
         template = template.concat("</template>");
@@ -959,7 +970,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             String chanName = visit(ctx.expr());
             label = label.concat(chanName);
 
-            if (chanName.equals(this.chanTarget.getName())) {
+            if (chanTarget != null && chanName.equals(this.chanTarget.getName())) {
                 if (this.ntaOperator.equals("parInt") || this.ntaOperator.equals("parSeq")) {
                     return "";
                 }

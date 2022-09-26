@@ -4,6 +4,7 @@ import Parser.Errors.*;
 import org.apache.commons.cli.*;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class OptionsArgs {
@@ -22,9 +23,10 @@ public class OptionsArgs {
     private boolean cxs;
     private boolean ccn;
     private boolean broadChan;
-    private boolean parInt, parSeq = false;
+    private boolean parInt, parSeq, maskVarClocks = false;
     private String env;
     private Options options;
+    private CommandLine line;
 
     public OptionsArgs(){
         this.options = new Options();
@@ -104,6 +106,12 @@ public class OptionsArgs {
                 "Enables the ParSeq operator. Two parallel actions become sequential."
         );
 
+        Option maskVarClocks = Option.builder("maskVarClocks")
+                .numberOfArgs(1)
+                .desc("Enables the maskvar operator over clocks.")
+                .valueSeparator(' ')
+                .argName("clock").build();
+
         Option envOpt = Option.builder("env")
                 .hasArg()
                 .desc("Specify the name of the automaton to make the mutants")
@@ -127,11 +135,11 @@ public class OptionsArgs {
         options.addOption(broadChanOpt);
         options.addOption(parIntOpt);
         options.addOption(parSeqOpt);
+        options.addOption(maskVarClocks);
         options.addOption(envOpt);
 
         CommandLineParser argsParser = new DefaultParser();
-        CommandLine line = argsParser.parse(options, args);
-
+        this.line = argsParser.parse(options, args);
 
         if(line.hasOption("m")){
             this.modelFile = new File(line.getOptionValue("m"));
@@ -162,7 +170,7 @@ public class OptionsArgs {
         this.broadChan = line.hasOption("broadChan");
         this.parInt = line.hasOption("parInt");
         this.parSeq = line.hasOption("parSeq");
-
+        this.maskVarClocks = line.hasOption("maskVarClocks");
 
         if(line.hasOption("env")){
             this.env = line.getOptionValue("env");
@@ -317,6 +325,22 @@ public class OptionsArgs {
     public boolean isParInt() { return this.parInt; }
     public void setParInt() { this.parInt = true; }
     public boolean isParSeq() {return this.parSeq;}
+
+    public String[] getMaskVarArgs() {
+        if (this.maskVarClocks) {
+            return line.getOptionValues("maskVarClocks");
+        }
+        return null;
+    }
+
+    public boolean isMaskVarClocks() {
+        return maskVarClocks;
+    }
+
+    public boolean checkOption(String optionName) {
+        return this.line.hasOption(optionName);
+    }
+
     public String getEnv() {
         return env;
     }

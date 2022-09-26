@@ -4,12 +4,15 @@ import Parser.Antlr.UppaalLexer;
 import Parser.Antlr.UppaalParser;
 import Parser.Graph.Graph;
 import Parser.Mutation.ChanType;
+import Parser.Mutation.ClockType;
 import Parser.Mutation.UppaalVisitor;
+import Parser.NTAExtension.ExtendedListener;
 import Parser.OperatorCommands.SmiNoRedundant;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +40,11 @@ public class Mutator {
 
     private ArrayList<Thread> threadsBroadChan;
     private ArrayList<Thread> threadsParInt = new ArrayList<>();
+    private ArrayList<Thread> threadsMaskVarClocks = new ArrayList<>();
     private ArrayList<Thread> threadsParSeq = new ArrayList<>();
     private UppaalParser parser;
     private ParseTree tree;
+    private ExtendedListener listener;
 
     private static final Logger logger = LoggerFactory.getLogger(Mutator.class);
     public Mutator(String modelFile, File fileMutants, String envTarget) throws IOException {
@@ -64,6 +69,12 @@ public class Mutator {
         this.envTarget = envTarget;
         this.parser = new UppaalParser(tokens, envTarget);
         this.tree = this.parser.model();
+
+        // Create NTA walker
+        ParseTreeWalker walker = new ParseTreeWalker();
+        // Create listener then feed to walker
+        listener = new ExtendedListener();
+        walker.walk(listener, tree);
     }
 
     public String infoMutants(){
@@ -80,6 +91,7 @@ public class Mutator {
         info = info.concat("broadChan ").concat(Integer.toString(this.threadsBroadChan.size())).concat("\n");
         info = info.concat("parInt ").concat(Integer.toString(this.threadsParInt.size())).concat("\n");
         info = info.concat("parSeq ").concat(Integer.toString(this.threadsParSeq.size())).concat("\n");
+        info = info.concat("maskVarClocks ").concat(Integer.toString(this.threadsMaskVarClocks.size())).concat("\n");
 
         info = info.concat("Total ").concat(Integer.toString(
                 this.threadsTmi.size()
@@ -94,6 +106,7 @@ public class Mutator {
                         +this.threadsBroadChan.size()
                         +this.threadsParInt.size()
                         +this.threadsParSeq.size()
+                        +this.threadsMaskVarClocks.size()
         )).concat("\n");
         return info;
     }
@@ -112,6 +125,7 @@ public class Mutator {
         int killedBroadChan = killedMutants(this.threadsBroadChan, pathIn, pathVerifyTa, pathQuery);
         int killedParInt = killedMutants(this.threadsParInt, pathIn, pathVerifyTa, pathQuery);
         int killedParSeq = killedMutants(this.threadsParSeq, pathIn, pathVerifyTa, pathQuery);
+        int killedMaskVarClocks = killedMutants(this.threadsMaskVarClocks, pathIn, pathVerifyTa, pathQuery);
 
         log = log.concat("Tmi killed ");
         log = log.concat(Integer.toString(killedTmi));
@@ -137,9 +151,11 @@ public class Mutator {
         log = log.concat(Integer.toString(killedParInt));
         log = log.concat("\nParSeq killed ");
         log = log.concat(Integer.toString(killedParSeq));
+        log = log.concat("\nMaskVarClocks killed");
+        log = log.concat(Integer.toString(killedMaskVarClocks));
         log = log.concat("\nScore ").concat(Integer.toString(
                 killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+
-                        killedBroadChan + killedParInt + killedParSeq
+                        killedBroadChan + killedParInt + killedParSeq + killedMaskVarClocks
         )).concat("/").concat(Integer.toString(
                 this.threadsTmi.size()
                         +this.threadsTad.size()
@@ -153,6 +169,7 @@ public class Mutator {
                         +this.threadsBroadChan.size()
                         +this.threadsParInt.size()
                         +this.threadsParSeq.size()
+                        +this.threadsMaskVarClocks.size()
         ));
         log = log.concat("\n");
         return log;
@@ -199,6 +216,7 @@ public class Mutator {
         this.runThreads(this.threadsBroadChan);
         this.runThreads(this.threadsParInt);
         this.runThreads(this.threadsParSeq);
+        this.runThreads(this.threadsMaskVarClocks);
     }
 
     public void runThreads(ArrayList<Thread> threads){
@@ -272,6 +290,7 @@ public class Mutator {
         this.joinThreads(this.threadsBroadChan);
         this.joinThreads(this.threadsParInt);
         this.joinThreads(this.threadsParSeq);
+        this.joinThreads(this.threadsMaskVarClocks);
     }
 
 
@@ -344,6 +363,7 @@ public class Mutator {
                         this.envTarget,
                         parser.getClockEnv(),
                         channel,
+                        "",
                         "broadChan"
                 );
 
@@ -365,6 +385,7 @@ public class Mutator {
                         this.envTarget,
                         parser.getClockEnv(),
                         channel,
+                        "",
                         "parInt"
                 );
                 try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parInt_" + channel.getName() + ".xml"))){
@@ -384,6 +405,7 @@ public class Mutator {
                         this.envTarget,
                         parser.getClockEnv(),
                         channel,
+                        "",
                         "parSeq"
                 );
                 try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parSeq_"+channel.getName() + ".xml"))){
@@ -392,6 +414,28 @@ public class Mutator {
                     logger.error("Error writing to file {}", ex.toString());
                 }
             }, "parSeq_"+channel.getName() + ".xml"));
+        }
+    }
+    public void prepareMaskVarClocksOp(String clockTarget) {
+        if (listener.getClockToTemplate().containsKey(clockTarget)) {
+            for (String template : listener.getClockToTemplate().get(clockTarget)) {
+                threadsMaskVarClocks.add(new Thread(() -> {
+                    UppaalVisitor eval = new UppaalVisitor(
+                            template,
+                            parser.getClockEnv(),
+                            null,
+                            clockTarget,
+                            "maskVarClocks"
+                    );
+                    try (FileWriter writer = new FileWriter(new File(this.fileMutants, "MaskVarClock_"+template + ".xml"))){
+                        writer.write(eval.visit(tree));
+                    } catch (IOException ex) {
+                        logger.error("Error writing to file {}", ex.toString());
+                    }
+                },"MaskVarClock_"+template));
+            }
+        } else {
+            logger.debug("Clock " + clockTarget + " is not a global variable.");
         }
     }
 

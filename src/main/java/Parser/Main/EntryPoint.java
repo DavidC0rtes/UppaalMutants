@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 public class EntryPoint {
 
     private static final Logger logger = LoggerFactory.getLogger(EntryPoint.class);
+    private static ArrayList<Command> commandsArray = new ArrayList<Command>();
 
     public static void main(String[] args)  {
         long startTime = System.currentTimeMillis();
@@ -36,7 +37,7 @@ public class EntryPoint {
             opt.parseArgs(args);
         } catch (ParseException e) {
             opt.printHelp();
-            logger.debug(e.toString());
+            logger.error(e.toString());
             System.exit(1);
         } catch (NoModelError e) {
             System.out.println("-m,--model <path> is a required option" +
@@ -98,8 +99,7 @@ public class EntryPoint {
             System.exit(1);
         }
 
-
-        Command ccnMutant = new Ccn(mutator);
+ /*       Command ccnMutant = new Ccn(mutator);
         Command cxlMutant = new Cxl(mutator);
         Command cxsMutant = new Cxs(mutator);
         Command smiMutant = new Smi(mutator);
@@ -112,13 +112,43 @@ public class EntryPoint {
         Command broadChanMutant = new BroadChan(mutator);
         Command parIntMutant = new ParInt(mutator);
         Command parSeqMutant = new ParSeq(mutator);
+        Command maskVarClocks = new MaskVarClocks(mutator);*/
 
-        Switch mySwitch = new Switch(tmiMutant, tadMutant, tadSyncMutant, tadRandomSyncMutant,
+        boolean addAllResult = Collections.addAll(commandsArray,
+                new Ccn(mutator),
+                new Cxl(mutator),
+                new Cxs(mutator),
+                new Smi(mutator),
+                new SmiNoRedundant(mutator),
+                new Tad(mutator),
+                new SmiNoRedundant(mutator),
+                new Tad(mutator),
+                new TadRandomSync(mutator),
+                new TadSync(mutator, opt.getTadSync()),
+                new Tmi(mutator),
+                new BroadChan(mutator),
+                new ParInt(mutator),
+                new ParSeq(mutator),
+                new MaskVarClocks(mutator, opt.getMaskVarArgs())
+        );
+
+        if (!addAllResult) {
+            logger.error("Couldn't create command objects and/or array");
+            System.exit(1);
+        }
+
+        /*Switch mySwitch = new Switch(tmiMutant, tadMutant, tadSyncMutant, tadRandomSyncMutant,
                 smiMutant, smiNoRedundant,
                 cxlMutant, cxsMutant, ccnMutant, broadChanMutant, parIntMutant, parSeqMutant);
+*/
+        Switch mySwitch = new Switch();
+        commandsArray.forEach((comm) -> {
+            if (opt.checkOption(comm.getName())) {
+                mySwitch.runOperator(comm);
+            }
+        });
 
-
-        if(opt.isTmi()) mySwitch.tmi();
+/*        if(opt.isTmi()) mySwitch.tmi();
         if(opt.isTad()) mySwitch.tad();
         if(!opt.getTadSync().equals("")) mySwitch.tadSync();
         if(opt.isTadRandomSync()) mySwitch.setTadRandomSync();
@@ -130,6 +160,7 @@ public class EntryPoint {
         if(opt.isBroadChan()) mySwitch.broadChan();
         if(opt.isParInt()) mySwitch.parInt();
         if(opt.isParSeq()) mySwitch.parSeq();
+        if(opt.isMaskVarClocks()) mySwitch.runOperator(maskVarClocks);*/
 
         mutator.runOperators();
         try {

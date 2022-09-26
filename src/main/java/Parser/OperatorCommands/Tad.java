@@ -13,4 +13,9 @@ public class Tad implements Command {
     public void execute(){
         this.mutantOperator.prepareTadOperator();
     }
+
+    @Override
+    public String getName() {
+        return "tad";
+    }
 }

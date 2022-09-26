@@ -32,6 +32,9 @@ public class Switch {
         this.parInt = parInt;
         this.parSeq = parSeq;
     }
+    public Switch() {
+
+    }
 
     public void tmi() {
         tmi.execute();
@@ -73,4 +76,8 @@ public class Switch {
     public void parInt() { parInt.execute(); }
 
     public void parSeq() { parSeq.execute(); }
+
+    public void runOperator(Command command) {
+        command.execute();
+    }
 }
