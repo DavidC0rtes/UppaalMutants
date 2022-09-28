@@ -307,7 +307,6 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         String type = visit(ctx.type());
 
         if (type.equals("chan") && this.chanTarget != null ) {
-
             String prefixTarget = "";
             if (ntaOperator.equals("broadChan")) {
                 prefixTarget = "broadcast";
@@ -320,22 +319,25 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             List<UppaalParser.VariableIDContext> _copy = new ArrayList<>(variablesId);
 
             for(UppaalParser.VariableIDContext varID : _copy) {
-                if (varID.getText().equals(chanTarget.getName())) {
+                if (varID.IDENTIFIER().getText().equals(chanTarget.getName())) {
                     varDecl.append(prefixTarget +" chan ")
-                            .append(varID.getText())
+                            .append(varID.IDENTIFIER().getText())
                             .append(";\n");
 
                 }
                 // Prevent re-declarations.
-                variablesId.removeIf(x -> x.getText().equals(chanTarget.getName()));
+                variablesId.removeIf(x -> x.IDENTIFIER().getText().equals(chanTarget.getName()));
             }
         }
 
-        varDecl.append(type)
-                .append(" ")
-                .append(extractChildren(variablesId));
+        if (variablesId.size() > 0) {
+            varDecl.append(type)
+                    .append(" ")
+                    .append(extractChildren(variablesId));
 
-        varDecl.append(";");
+            varDecl.append(";");
+        }
+
         return varDecl.toString();
     }
 
