@@ -11,7 +11,7 @@ public class MaskVarClocks implements Command {
 
     public MaskVarClocks(Mutator mutantOperator, String[] args) {
         this.mutantOperator = mutantOperator;
-        this.clock = args[0];
+        this.clock = args != null ? args[0] : "";
     }
 
     @Override

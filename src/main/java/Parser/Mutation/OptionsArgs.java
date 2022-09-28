@@ -23,7 +23,7 @@ public class OptionsArgs {
     private boolean cxs;
     private boolean ccn;
     private boolean broadChan;
-    private boolean parInt, parSeq, maskVarClocks = false;
+    private boolean parInt, parSeq, maskVarClocks, maskVarChannels = false;
     private String env;
     private Options options;
     private CommandLine line;
@@ -112,6 +112,12 @@ public class OptionsArgs {
                 .valueSeparator(' ')
                 .argName("clock").build();
 
+        Option maskVarChannels = Option.builder("maskVarChannels")
+                .numberOfArgs(1)
+                .desc("Enables the maskvar operator over channels.")
+                .valueSeparator(' ')
+                .argName("channel").build();
+
         Option envOpt = Option.builder("env")
                 .hasArg()
                 .desc("Specify the name of the automaton to make the mutants")
@@ -136,6 +142,7 @@ public class OptionsArgs {
         options.addOption(parIntOpt);
         options.addOption(parSeqOpt);
         options.addOption(maskVarClocks);
+        options.addOption(maskVarChannels);
         options.addOption(envOpt);
 
         CommandLineParser argsParser = new DefaultParser();
@@ -171,6 +178,7 @@ public class OptionsArgs {
         this.parInt = line.hasOption("parInt");
         this.parSeq = line.hasOption("parSeq");
         this.maskVarClocks = line.hasOption("maskVarClocks");
+        this.maskVarChannels = line.hasOption("maskVarChannels");
 
         if(line.hasOption("env")){
             this.env = line.getOptionValue("env");
@@ -326,15 +334,21 @@ public class OptionsArgs {
     public void setParInt() { this.parInt = true; }
     public boolean isParSeq() {return this.parSeq;}
 
-    public String[] getMaskVarArgs() {
-        if (this.maskVarClocks) {
-            return line.getOptionValues("maskVarClocks");
+    public String[] getMaskVarArgs(String type) {
+        switch (type) {
+            case "clocks":
+                if (this.maskVarClocks) {
+                    return line.getOptionValues("maskVarClocks");
+                }
+                break;
+            case "channels":
+                if (this.maskVarChannels) {
+                    return line.getOptionValues("maskVarChannels");
+                }
+                break;
         }
-        return null;
-    }
 
-    public boolean isMaskVarClocks() {
-        return maskVarClocks;
+        return null;
     }
 
     public boolean checkOption(String optionName) {

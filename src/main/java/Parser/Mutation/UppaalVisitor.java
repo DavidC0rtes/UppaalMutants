@@ -34,7 +34,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private boolean isControllable = false;
     private boolean isClockLeft = false;
     private boolean isClockRight = false;
-    private String envTarget, ntaOperator, newClock, clockTarget;
+    private String envTarget, ntaOperator, newClock, varTarget;
 
 
     public UppaalVisitor (int tmiOperator, String templateTad, String sourceTad, String targetTad, String outputTad, String locationSmi,
@@ -74,7 +74,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
              String envTarget,
              HashMap<String, HashSet<ClockType>> clockEnv,
              ChanType chanTarget,
-             String clockTarget,
+             String varTarget,
              String operator
      )
      {
@@ -82,7 +82,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         this.clockEnv = clockEnv;
         this.chanTarget = chanTarget;
         this.ntaOperator = operator;
-        this.clockTarget = clockTarget;
+        this.varTarget = varTarget;
 
         if (this.ntaOperator.equals("parSeq")) {
             setNewClock();
@@ -136,9 +136,18 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             declaration = declaration.concat(newclockDeclr);
         }
 
-        if (this.ntaOperator.equals("maskVarClocks") && this.envTarget.equals(currentEnv)) {
-            String maskedClock = String.format("clock %s;\n", this.clockTarget);
-            declaration = declaration.concat(maskedClock);
+        if (this.envTarget.equals(currentEnv)) {
+            String maskedVar = "";
+            switch (this.ntaOperator) {
+                case "maskVarClocks":
+                    maskedVar = String.format("clock %s;\n", this.varTarget);
+                    break;
+
+                case "maskVarChannels":
+                    maskedVar = String.format("channel %s;\n", this.varTarget);
+                    break;
+            }
+            declaration = declaration.concat(maskedVar);
         }
         //.println(declaration);
         declaration = declaration.concat(ctx.CLOSE_DECLARATION().getText());

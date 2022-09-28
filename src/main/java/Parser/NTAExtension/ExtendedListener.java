@@ -7,17 +7,28 @@ import java.util.*;
 
 public class ExtendedListener extends UppaalParserBaseListener {
     private final HashMap<String, HashSet<String>> clockToTemplate = new HashMap<>();
+    private final HashMap<String, HashSet<String>> chanToTemplate = new HashMap<>();
     private String currentEnv = "Global";
 
 
     @Override
     public void enterVariableDecl(UppaalParser.VariableDeclContext ctx) {
-        if (currentEnv.equals("Global") && ctx.type().typeId().getText().equals("clock")) {
-            for (UppaalParser.VariableIDContext varId : ctx.variableID()) {
-              if (!clockToTemplate.containsKey(varId.getText())) {
-                  clockToTemplate.put(varId.IDENTIFIER().getText(), new HashSet<String>());
-              }
+        String type = ctx.type().typeId().getText();
+        if (currentEnv.equals("Global")) {
+            if (type.equals("clock")) {
+                for (UppaalParser.VariableIDContext varId : ctx.variableID()) {
+                    if (!clockToTemplate.containsKey(varId.getText())) {
+                        clockToTemplate.put(varId.IDENTIFIER().getText(), new HashSet<String>());
+                    }
+                }
+            } else if (type.equals("chan")) {
+                for (UppaalParser.VariableIDContext varId : ctx.variableID()) {
+                    if (!chanToTemplate.containsKey(varId.getText())) {
+                        chanToTemplate.put(varId.IDENTIFIER().getText(), new HashSet<String>());
+                    }
+                }
             }
+
         }
     }
 
@@ -34,8 +45,28 @@ public class ExtendedListener extends UppaalParserBaseListener {
             temp.add(currentEnv);
         }
     }
+    @Override
+    public void enterLabelTransSyncInput(UppaalParser.LabelTransSyncInputContext ctx) {
+        String key = ctx.expr().getText().split("\\[")[0];
+        if (chanToTemplate.containsKey(key)) {
+            HashSet<String> temp = chanToTemplate.get(key);
+            temp.add(currentEnv);
+        }
+    }
+    @Override
+    public void enterLabelTransSyncOutput(UppaalParser.LabelTransSyncOutputContext ctx) {
+        String key = ctx.expr().getText().split("\\[")[0];
+        if (chanToTemplate.containsKey(key)) {
+            HashSet<String> temp = chanToTemplate.get(key);
+            temp.add(currentEnv);
+        }
+    }
+
 
     public HashMap<String, HashSet<String>> getClockToTemplate() {
         return clockToTemplate;
+    }
+    public HashMap<String, HashSet<String>> getChanToTemplate() {
+        return chanToTemplate;
     }
 }

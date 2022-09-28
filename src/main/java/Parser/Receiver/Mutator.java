@@ -41,6 +41,7 @@ public class Mutator {
     private ArrayList<Thread> threadsBroadChan;
     private ArrayList<Thread> threadsParInt = new ArrayList<>();
     private ArrayList<Thread> threadsMaskVarClocks = new ArrayList<>();
+    private final ArrayList<Thread> threadsMaskVarChannels = new ArrayList<>();
     private ArrayList<Thread> threadsParSeq = new ArrayList<>();
     private UppaalParser parser;
     private ParseTree tree;
@@ -92,6 +93,7 @@ public class Mutator {
         info = info.concat("parInt ").concat(Integer.toString(this.threadsParInt.size())).concat("\n");
         info = info.concat("parSeq ").concat(Integer.toString(this.threadsParSeq.size())).concat("\n");
         info = info.concat("maskVarClocks ").concat(Integer.toString(this.threadsMaskVarClocks.size())).concat("\n");
+        info = info.concat("maskVarChannels ").concat(Integer.toString(this.threadsMaskVarChannels.size())).concat("\n");
 
         info = info.concat("Total ").concat(Integer.toString(
                 this.threadsTmi.size()
@@ -107,6 +109,7 @@ public class Mutator {
                         +this.threadsParInt.size()
                         +this.threadsParSeq.size()
                         +this.threadsMaskVarClocks.size()
+                        +this.threadsMaskVarChannels.size()
         )).concat("\n");
         return info;
     }
@@ -126,6 +129,7 @@ public class Mutator {
         int killedParInt = killedMutants(this.threadsParInt, pathIn, pathVerifyTa, pathQuery);
         int killedParSeq = killedMutants(this.threadsParSeq, pathIn, pathVerifyTa, pathQuery);
         int killedMaskVarClocks = killedMutants(this.threadsMaskVarClocks, pathIn, pathVerifyTa, pathQuery);
+        int killedMaskVarChannels = killedMutants(this.threadsMaskVarChannels, pathIn, pathVerifyTa, pathQuery);
 
         log = log.concat("Tmi killed ");
         log = log.concat(Integer.toString(killedTmi));
@@ -153,9 +157,11 @@ public class Mutator {
         log = log.concat(Integer.toString(killedParSeq));
         log = log.concat("\nMaskVarClocks killed");
         log = log.concat(Integer.toString(killedMaskVarClocks));
+        log = log.concat("\nMaskVarChannels killed");
+        log = log.concat(Integer.toString(killedMaskVarChannels));
         log = log.concat("\nScore ").concat(Integer.toString(
                 killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+
-                        killedBroadChan + killedParInt + killedParSeq + killedMaskVarClocks
+                        killedBroadChan + killedParInt + killedParSeq + killedMaskVarClocks + killedMaskVarChannels
         )).concat("/").concat(Integer.toString(
                 this.threadsTmi.size()
                         +this.threadsTad.size()
@@ -170,6 +176,7 @@ public class Mutator {
                         +this.threadsParInt.size()
                         +this.threadsParSeq.size()
                         +this.threadsMaskVarClocks.size()
+                        +this.threadsMaskVarChannels.size()
         ));
         log = log.concat("\n");
         return log;
@@ -217,6 +224,7 @@ public class Mutator {
         this.runThreads(this.threadsParInt);
         this.runThreads(this.threadsParSeq);
         this.runThreads(this.threadsMaskVarClocks);
+        this.runThreads(this.threadsMaskVarChannels);
     }
 
     public void runThreads(ArrayList<Thread> threads){
@@ -291,6 +299,7 @@ public class Mutator {
         this.joinThreads(this.threadsParInt);
         this.joinThreads(this.threadsParSeq);
         this.joinThreads(this.threadsMaskVarClocks);
+        this.joinThreads(this.threadsMaskVarChannels);
     }
 
 
@@ -436,6 +445,33 @@ public class Mutator {
             }
         } else {
             logger.debug("Clock " + clockTarget + " is not a global variable.");
+        }
+    }
+
+    public void prepareMaskVarChannelsOp(String varTarget) {
+        HashMap<String, HashSet<String>> globalChans = listener.getChanToTemplate();
+        for (var entry : globalChans.entrySet()) {
+            logger.debug(entry.getKey() + ":" + entry.getValue());
+        }
+        if (globalChans.containsKey(varTarget)) {
+            for (String template : globalChans.get(varTarget)) {
+                threadsMaskVarChannels.add(new Thread(() -> {
+                    UppaalVisitor eval = new UppaalVisitor(
+                            template,
+                            parser.getClockEnv(),
+                            null,
+                            varTarget,
+                            "maskVarChannels"
+                    );
+                    try (FileWriter writer = new FileWriter(new File(this.fileMutants, "MaskVarChannel_"+template + ".xml"))){
+                        writer.write(eval.visit(tree));
+                    } catch (IOException ex) {
+                        logger.error("Error writing to file {}", ex.toString());
+                    }
+                },"MaskVarChannel_"+template));
+            }
+        } else {
+            logger.debug("Clock " + varTarget + " is not a global variable.");
         }
     }
 

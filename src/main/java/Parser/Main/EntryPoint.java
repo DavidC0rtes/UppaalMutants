@@ -129,7 +129,8 @@ public class EntryPoint {
                 new BroadChan(mutator),
                 new ParInt(mutator),
                 new ParSeq(mutator),
-                new MaskVarClocks(mutator, opt.getMaskVarArgs())
+                new MaskVarClocks(mutator, opt.getMaskVarArgs("clocks")),
+                new MaskVarChannels(mutator, opt.getMaskVarArgs("channels"))
         );
 
         if (!addAllResult) {
