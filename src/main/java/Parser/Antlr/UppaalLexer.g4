@@ -22,6 +22,10 @@ OPEN_SYNC  :   '<' [ \t\r\n]*'label' [ \t\r\n]+ 'kind' [ \t\r\n]* '=' [ \t\r\n]*
                 '"synchronisation"' ( [ \t\r\n]* 'x' [ \t\r\n]* '=' [ \t\r\n]* '"' ('-')? DIGIT+ '"' [ \t\r\n]* Y [ \t\r\n]* '=' [ \t\r\n]* '"' ('-')? DIGIT+ '"')?
                 [ \t\r\n]* '>'          -> pushMode(EXPRESSIONS);
 
+OPEN_LBLTR      :   LBLSTART ASSIGNMENT LBLCOORD [ \t\r\n]* '>' -> pushMode(EXPRESSIONS) ;
+OPEN_SELECT     :   LBLSTART SELECT LBLCOORD [ \t\r\n]* '>'     -> pushMode(EXPRESSIONS) ;
+OPEN_INV        :   LBLSTART INVARIANT LBLCOORD [ \t\r\n]* '>'  -> pushMode(EXPRESSIONS) ;
+
 OPEN_DECLARATION    :   '<' [ \t\r\n]* 'declaration' [ \t\r\n]* '>'
                                         -> pushMode(EXPRESSIONS);
 
@@ -35,6 +39,11 @@ SPECIAL_OPEN:   '<?' Name               -> more, pushMode(PROC_INSTR) ;
 
 //IDENTIFIER  :   [a-zA-Z_] [a-zA-Z0-9_]* ;
 TEXT        :   ~[<&]+ ;        // match any 16 bit char other than < and &
+fragment
+LBLSTART        :   '<' [ \t\r\n]*'label' [ \t\r\n]+ 'kind' [ \t\r\n]* '=' [ \t\r\n]* ;
+fragment
+LBLCOORD        :   ( [ \t\r\n]* 'x' [ \t\r\n]* '=' [ \t\r\n]* '"' ('-')? DIGIT+ '"' [ \t\r\n]* Y [ \t\r\n]* '=' [ \t\r\n]* '"' ('-')? DIGIT+ '"')?
+                ;
 
 // ----------------- Everything INSIDE of a tag ---------------------
 mode INSIDE;
@@ -68,7 +77,9 @@ QUERIES     :   'queries' ;
 QUERY       :   'query' ;
 FORMULA     :   'formula' ;
 QUERY_COMMENT:   'comment' ;
-
+ASSIGNMENT		:	'"assignment"' ;
+SELECT			:	'"select"' ;
+INVARIANT		:	'"invariant"' ;
 //GUARD       :   '"guard"' ;
 
 

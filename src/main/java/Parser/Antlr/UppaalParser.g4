@@ -414,7 +414,7 @@ location    :   '<' 'location'
 
                     '</' 'location' '>' ;
 
-labelLoc   :   '<' 'label' 'kind' EQUALS STRING coordinate?  '>' anything '</' 'label' '>' ;
+labelLoc   :   OPEN_INV misc* expr CLOSE_LABEL ;
 
 name        :   '<' 'name'
                     coordinate?
@@ -494,6 +494,13 @@ labelTransSyncOutput: (OPEN_SYNC (expr '!')? CLOSE_LABEL)
                         this.transitionsTad.get(currentEnv).get(currentSource).remove(currentTarget);
                     } ;
 labelTrans: '<' 'label' 'kind' EQUALS STRING coordinate?  '>' anything '</' 'label' '>' ;
+labelUpdate :	OPEN_LBLTR misc* expr (',' expr)* CLOSE_LABEL ;
+
+labelSelect :   OPEN_SELECT misc* selectList CLOSE_LABEL ;
+
+selectList  :   IDENTIFIER ':' type
+            |   selectList ',' IDENTIFIER ':' type
+            ;
 
 guardExpr
 //locals[boolean isClockId = false, boolean isClockIdAux= false]

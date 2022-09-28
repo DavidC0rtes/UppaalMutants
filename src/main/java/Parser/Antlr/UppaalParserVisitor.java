@@ -677,6 +677,24 @@ public interface UppaalParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitLabelTrans(UppaalParser.LabelTransContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link UppaalParser#labelUpdate}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLabelUpdate(UppaalParser.LabelUpdateContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link UppaalParser#labelSelect}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLabelSelect(UppaalParser.LabelSelectContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link UppaalParser#selectList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSelectList(UppaalParser.SelectListContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code SumGuard}
 	 * labeled alternative in {@link UppaalParser#guardExpr}.
 	 * @param ctx the parse tree
