@@ -376,7 +376,7 @@ public class Mutator {
                         "broadChan"
                 );
 
-                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "broadChan" + finalCounter + ".xml"))) {
+                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "broadChan_" + channel.getName() + ".xml"))) {
                     writer.write(eval.visit(tree));
                 } catch (IOException e) {
                     logger.error("Error writing to file:{}", e.toString());

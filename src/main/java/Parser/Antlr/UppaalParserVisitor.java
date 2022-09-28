@@ -629,12 +629,6 @@ public interface UppaalParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitLocation(UppaalParser.LocationContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link UppaalParser#labelLoc}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitLabelLoc(UppaalParser.LabelLocContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link UppaalParser#name}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -646,6 +640,12 @@ public interface UppaalParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitColor(UppaalParser.ColorContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link UppaalParser#labelLoc}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLabelLoc(UppaalParser.LabelLocContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link UppaalParser#transition}.
 	 * @param ctx the parse tree

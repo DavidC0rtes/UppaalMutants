@@ -1052,16 +1052,6 @@ public interface UppaalParserListener extends ParseTreeListener {
 	 */
 	void exitLocation(UppaalParser.LocationContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link UppaalParser#labelLoc}.
-	 * @param ctx the parse tree
-	 */
-	void enterLabelLoc(UppaalParser.LabelLocContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link UppaalParser#labelLoc}.
-	 * @param ctx the parse tree
-	 */
-	void exitLabelLoc(UppaalParser.LabelLocContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link UppaalParser#name}.
 	 * @param ctx the parse tree
 	 */
@@ -1081,6 +1071,16 @@ public interface UppaalParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitColor(UppaalParser.ColorContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link UppaalParser#labelLoc}.
+	 * @param ctx the parse tree
+	 */
+	void enterLabelLoc(UppaalParser.LabelLocContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link UppaalParser#labelLoc}.
+	 * @param ctx the parse tree
+	 */
+	void exitLabelLoc(UppaalParser.LabelLocContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link UppaalParser#transition}.
 	 * @param ctx the parse tree

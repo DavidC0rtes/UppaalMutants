@@ -409,18 +409,16 @@ branchpoint :   '<' 'branchpoint' 'id' EQUALS STRING
 
 location    :   '<' 'location'
                     'id' EQUALS STRING coordinate?  color? '>' misc* (name misc*)?
-                    (labelLoc misc*)*
+                    (labelLoc misc*)?
                     ('<' (URGENT_LOC | 'committed') '/>' misc*)?
 
                     '</' 'location' '>' ;
-
-labelLoc   :   OPEN_INV misc* expr CLOSE_LABEL ;
-
 name        :   '<' 'name'
                     coordinate?
                     '>' anything '</' 'name' '>' ;
 
 color       :   'color' EQUALS STRING;
+labelLoc    :  OPEN_INV misc* expr CLOSE_LABEL ;
 
 transition  :   '<' 'transition' color? '>'
                 {
@@ -493,7 +491,7 @@ labelTransSyncOutput: (OPEN_SYNC (expr '!')? CLOSE_LABEL)
                         //due to a transition can not has two synchro labels
                         this.transitionsTad.get(currentEnv).get(currentSource).remove(currentTarget);
                     } ;
-labelTrans: '<' 'label' 'kind' EQUALS STRING coordinate?  '>' anything '</' 'label' '>' ;
+labelTrans: (labelSelect misc* | labelUpdate misc* ) ;
 labelUpdate :	OPEN_LBLTR misc* expr (',' expr)* CLOSE_LABEL ;
 
 labelSelect :   OPEN_SELECT misc* selectList CLOSE_LABEL ;
@@ -501,7 +499,6 @@ labelSelect :   OPEN_SELECT misc* selectList CLOSE_LABEL ;
 selectList  :   IDENTIFIER ':' type
             |   selectList ',' IDENTIFIER ':' type
             ;
-
 guardExpr
 //locals[boolean isClockId = false, boolean isClockIdAux= false]
             :   IDENTIFIER

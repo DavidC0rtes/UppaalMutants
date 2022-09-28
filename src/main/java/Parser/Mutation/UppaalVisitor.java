@@ -824,9 +824,9 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             location = location.concat(visit(ctx.name())).concat("\n");
         }
 
-        List<UppaalParser.LabelLocContext> labelLocs = ctx.labelLoc();
-        for(UppaalParser.LabelLocContext labelLoc: labelLocs){
-            location = location.concat(visit(labelLoc)).concat("\n");
+
+        if (ctx.labelLoc() != null) {
+            location = location.concat(visit(ctx.labelLoc())).concat("\n");
         }
 
         if(ctx.URGENT_LOC()!=null){
@@ -841,17 +841,15 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
     @Override
     public String visitLabelLoc(UppaalParser.LabelLocContext ctx) {
-        String labelLoc = "<label kind=";
-        labelLoc = labelLoc.concat(ctx.STRING().getText());
-
-        if(ctx.coordinate()!=null){
-            labelLoc = labelLoc.concat(visit(ctx.coordinate()));
+        String labelLoc = ctx.OPEN_INV().getText();
+        if (ctx.misc() != null) {
+            for (UppaalParser.MiscContext x : ctx.misc()) {
+                labelLoc = labelLoc.concat(x.getText());
+            }
         }
 
-        labelLoc = labelLoc.concat(">");
-
-        labelLoc = labelLoc.concat(visit(ctx.anything()));
-        labelLoc = labelLoc.concat("</label>");
+        labelLoc = labelLoc.concat(visit(ctx.expr()));
+        labelLoc += ctx.CLOSE_LABEL().getText();
         return labelLoc;
     }
 
@@ -951,14 +949,23 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
     @Override
     public String visitLabelTrans(UppaalParser.LabelTransContext ctx) {
-        String label = "<label kind=";
-        label = label.concat(ctx.STRING().getText());
-        if(ctx.coordinate() != null){
-            label = label.concat(visit(ctx.coordinate()));
-        }
-        label = label.concat(">").concat(ctx.anything().getText());
-        label = label.concat("</label>");
-        return label;
+         if (ctx.labelSelect() != null) {
+             return visit(ctx.labelSelect());
+         }
+         if (ctx.labelUpdate() != null) {
+             return visit(ctx.labelUpdate());
+         }
+         return "";
+    }
+
+    @Override
+    public String visitLabelUpdate(UppaalParser.LabelUpdateContext ctx) {
+         return ctx.getText();
+    }
+
+    @Override
+    public String visitLabelSelect(UppaalParser.LabelSelectContext ctx) {
+         return ctx.getText();
     }
 
     @Override
