@@ -127,6 +127,7 @@ public class EntryPoint {
                 new TadSync(mutator, opt.getTadSync()),
                 new Tmi(mutator),
                 new BroadChan(mutator),
+                new UrgChan(mutator),
                 new ParInt(mutator),
                 new ParSeq(mutator),
                 new MaskVarClocks(mutator, opt.getMaskVarArgs("clocks")),

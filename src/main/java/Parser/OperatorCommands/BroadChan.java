@@ -13,7 +13,7 @@ public class BroadChan implements Command {
 
     @Override
     public void execute() {
-        this.mutantOperator.prepareBroadChanOperator();
+        this.mutantOperator.prepareUBOperator("broadcast");
     }
 
     @Override

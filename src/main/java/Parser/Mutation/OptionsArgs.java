@@ -24,6 +24,7 @@ public class OptionsArgs {
     private boolean ccn;
     private boolean broadChan;
     private boolean parInt, parSeq, maskVarClocks, maskVarChannels = false;
+    private boolean urgChan = false;
     private String env;
     private Options options;
     private CommandLine line;
@@ -95,6 +96,13 @@ public class OptionsArgs {
                 false,
                 "Enable broadChan operator. Adds the broadcast prefix to an existing channel."
         );
+
+        Option urgChanOpt = new Option(
+                "urgChan",
+                false,
+                "Enable the urgChan operator. Adds the urgent prefix to an existing channel."
+        );
+
         Option parIntOpt = new Option(
                 "parInt",
                 false,
@@ -123,27 +131,13 @@ public class OptionsArgs {
                 .desc("Specify the name of the automaton to make the mutants")
                 .argName("action").build();
 
-        options.addOption(helpOpt);
-        options.addOption(modelOpt);
-        options.addOption(queryOpt);
-        options.addOption(verifyOpt);
-        options.addOption(pathOpt);
-        options.addOption(logOpt);
-        options.addOption(tmiOpt);
-        options.addOption(tadOpt);
-        options.addOption(tadSyncOpt);
-        options.addOption(tadRandomOpt);
-        options.addOption(smiOpt);
-        options.addOption(smiNoRedundantOpt);
-        options.addOption(cxlOpt);
-        options.addOption(cxsOpt);
-        options.addOption(ccnOpt);
-        options.addOption(broadChanOpt);
-        options.addOption(parIntOpt);
-        options.addOption(parSeqOpt);
-        options.addOption(maskVarClocks);
-        options.addOption(maskVarChannels);
-        options.addOption(envOpt);
+        for (Option option : Arrays.asList(
+                helpOpt, modelOpt, queryOpt, verifyOpt, pathOpt, logOpt, tmiOpt, tadOpt,
+                tadSyncOpt, tadRandomOpt, smiOpt, smiNoRedundantOpt, cxlOpt, cxsOpt, ccnOpt, broadChanOpt, parIntOpt,
+                parSeqOpt, maskVarClocks, maskVarChannels, urgChanOpt, envOpt))
+        {
+            options.addOption(option);
+        }
 
         CommandLineParser argsParser = new DefaultParser();
         this.line = argsParser.parse(options, args);
@@ -179,6 +173,7 @@ public class OptionsArgs {
         this.parSeq = line.hasOption("parSeq");
         this.maskVarClocks = line.hasOption("maskVarClocks");
         this.maskVarChannels = line.hasOption("maskVarChannels");
+        this.urgChan = line.hasOption("urgChan");
 
         if(line.hasOption("env")){
             this.env = line.getOptionValue("env");

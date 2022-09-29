@@ -42,6 +42,7 @@ public class Mutator {
     private ArrayList<Thread> threadsParInt = new ArrayList<>();
     private ArrayList<Thread> threadsMaskVarClocks = new ArrayList<>();
     private final ArrayList<Thread> threadsMaskVarChannels = new ArrayList<>();
+    private final ArrayList<Thread> threadsUrgChan = new ArrayList<>();
     private ArrayList<Thread> threadsParSeq = new ArrayList<>();
     private UppaalParser parser;
     private ParseTree tree;
@@ -94,6 +95,8 @@ public class Mutator {
         info = info.concat("parSeq ").concat(Integer.toString(this.threadsParSeq.size())).concat("\n");
         info = info.concat("maskVarClocks ").concat(Integer.toString(this.threadsMaskVarClocks.size())).concat("\n");
         info = info.concat("maskVarChannels ").concat(Integer.toString(this.threadsMaskVarChannels.size())).concat("\n");
+        info = info.concat("urgChan ").concat(Integer.toString(this.threadsUrgChan.size())).concat("\n");
+
 
         info = info.concat("Total ").concat(Integer.toString(
                 this.threadsTmi.size()
@@ -110,6 +113,7 @@ public class Mutator {
                         +this.threadsParSeq.size()
                         +this.threadsMaskVarClocks.size()
                         +this.threadsMaskVarChannels.size()
+                        +this.threadsUrgChan.size()
         )).concat("\n");
         return info;
     }
@@ -130,6 +134,8 @@ public class Mutator {
         int killedParSeq = killedMutants(this.threadsParSeq, pathIn, pathVerifyTa, pathQuery);
         int killedMaskVarClocks = killedMutants(this.threadsMaskVarClocks, pathIn, pathVerifyTa, pathQuery);
         int killedMaskVarChannels = killedMutants(this.threadsMaskVarChannels, pathIn, pathVerifyTa, pathQuery);
+        int killedUrgChan = killedMutants(this.threadsUrgChan, pathIn, pathVerifyTa, pathQuery);
+
 
         log = log.concat("Tmi killed ");
         log = log.concat(Integer.toString(killedTmi));
@@ -159,9 +165,12 @@ public class Mutator {
         log = log.concat(Integer.toString(killedMaskVarClocks));
         log = log.concat("\nMaskVarChannels killed");
         log = log.concat(Integer.toString(killedMaskVarChannels));
+        log = log.concat("\nUrgChan killed");
+        log = log.concat(Integer.toString(killedUrgChan));
         log = log.concat("\nScore ").concat(Integer.toString(
                 killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+
                         killedBroadChan + killedParInt + killedParSeq + killedMaskVarClocks + killedMaskVarChannels
+                        + killedUrgChan
         )).concat("/").concat(Integer.toString(
                 this.threadsTmi.size()
                         +this.threadsTad.size()
@@ -177,6 +186,7 @@ public class Mutator {
                         +this.threadsParSeq.size()
                         +this.threadsMaskVarClocks.size()
                         +this.threadsMaskVarChannels.size()
+                        +this.threadsUrgChan.size()
         ));
         log = log.concat("\n");
         return log;
@@ -225,6 +235,7 @@ public class Mutator {
         this.runThreads(this.threadsParSeq);
         this.runThreads(this.threadsMaskVarClocks);
         this.runThreads(this.threadsMaskVarChannels);
+        this.runThreads(this.threadsUrgChan);
     }
 
     public void runThreads(ArrayList<Thread> threads){
@@ -300,6 +311,7 @@ public class Mutator {
         this.joinThreads(this.threadsParSeq);
         this.joinThreads(this.threadsMaskVarClocks);
         this.joinThreads(this.threadsMaskVarChannels);
+        this.joinThreads(this.threadsUrgChan);
     }
 
 
@@ -357,23 +369,33 @@ public class Mutator {
 
      */
 
-    public void prepareBroadChanOperator() {
-        int counter = 0;
+    public void prepareUBOperator(String prefix) {
+        // A prefix is one of...
+        String[] prefixes = {"broadcast", "urgent"};
+        if (!prefixes[0].equals(prefix) && !prefixes[1].equals(prefix)) {
+            logger.error("Invalid prefix " + prefix + " operator urg/broadChan.");
+            return;
+        }
+
+        Map<String, ArrayList<Thread>> threadMap = Map.of(
+                "broadcast", threadsBroadChan,
+                "urgent", threadsUrgChan
+        );
 
         // Only interested in p2p global channels.
         ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
-        candidates.removeIf(x -> x.getPrefix().equals("broadcast"));
+        candidates.removeIf(x -> x.getPrefix().equals(prefix));
+        String operator = prefix.equals("broadcast") ? "broadChan" : "urgChan";
 
         for (ChanType channel : candidates) {
 
-            int finalCounter = counter;
-            threadsBroadChan.add(new Thread(() -> {
+            threadMap.get(prefix).add(new Thread(() -> {
                 UppaalVisitor eval = new UppaalVisitor(
                         this.envTarget,
                         parser.getClockEnv(),
                         channel,
                         "",
-                        "broadChan"
+                        operator
                 );
 
                 try (FileWriter writer = new FileWriter(new File(this.fileMutants, "broadChan_" + channel.getName() + ".xml"))) {
@@ -381,8 +403,7 @@ public class Mutator {
                 } catch (IOException e) {
                     logger.error("Error writing to file:{}", e.toString());
                 }
-            }, "broadChann" + counter + ".xml"));
-            counter++;
+            }, operator +"_" + channel + ".xml"));
         }
     }
 
