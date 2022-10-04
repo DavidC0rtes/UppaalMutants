@@ -25,6 +25,7 @@ OPEN_SYNC  :   '<' [ \t\r\n]*'label' [ \t\r\n]+ 'kind' [ \t\r\n]* '=' [ \t\r\n]*
 OPEN_LBLTR      :   LBLSTART ASSIGNMENT LBLCOORD [ \t\r\n]* '>' -> pushMode(EXPRESSIONS) ;
 OPEN_SELECT     :   LBLSTART SELECT LBLCOORD [ \t\r\n]* '>'     -> pushMode(EXPRESSIONS) ;
 OPEN_INV        :   LBLSTART INVARIANT LBLCOORD [ \t\r\n]* '>'  -> pushMode(EXPRESSIONS) ;
+OPEN_LBLCOM     :   LBLSTART QUERY_COMMENT LBLCOORD [ \t\r\n]* '>' -> pushMode(EXPRESSIONS) ;
 
 OPEN_DECLARATION    :   '<' [ \t\r\n]* 'declaration' [ \t\r\n]* '>'
                                         -> pushMode(EXPRESSIONS);

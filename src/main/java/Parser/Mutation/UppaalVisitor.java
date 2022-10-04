@@ -90,7 +90,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     }
 
     private void setNewClock() {
-         newClock = String.format("dummy-%d", System.currentTimeMillis() / 1000L);
+         newClock = String.format("dummy%d", System.currentTimeMillis() / 1000L);
     }
     @Override
     public String visitModel(UppaalParser.ModelContext ctx) {
@@ -136,11 +136,12 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             declaration = declaration.concat(newclockDeclr);
         }
 
-        if (this.envTarget.equals(currentEnv)) {
+        if (this.envTarget.equals(currentEnv) && !currentEnv.equals("Global")) {
             String maskedVar = "";
             switch (this.ntaOperator) {
                 case "maskVarClocks":
                     maskedVar = String.format("clock %s;\n", this.varTarget);
+                    System.out.println("writing " + maskedVar);
                     break;
 
                 case "maskVarChannels":
@@ -321,8 +322,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             for(UppaalParser.VariableIDContext varID : _copy) {
                 if (varID.IDENTIFIER().getText().equals(chanTarget.getName())) {
                     varDecl.append(prefixTarget +" chan ")
-                            .append(varID.IDENTIFIER().getText())
-                            .append(";\n");
+                            .append(varID.getText());
 
                 }
                 // Prevent re-declarations.
@@ -334,10 +334,9 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             varDecl.append(type)
                     .append(" ")
                     .append(extractChildren(variablesId));
-
-            varDecl.append(";");
         }
 
+        varDecl.append(";");
         return varDecl.toString();
     }
 

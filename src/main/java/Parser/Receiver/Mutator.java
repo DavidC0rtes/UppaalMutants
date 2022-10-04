@@ -8,6 +8,8 @@ import Parser.Mutation.ClockType;
 import Parser.Mutation.UppaalVisitor;
 import Parser.NTAExtension.ExtendedListener;
 import Parser.OperatorCommands.SmiNoRedundant;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -18,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Class <code>Mutator</code> defines the "engine" responsible
@@ -48,6 +51,16 @@ public class Mutator {
     private ParseTree tree;
     private ExtendedListener listener;
 
+    private Map<String, int[]> killedData = Map.of(
+            "broadChan" , new int[]{0, 0},
+            "urgChan" , new int[]{0, 0},
+            "maskVarClocks" , new int[]{0, 0},
+            "maskVarChannels" , new int[]{0, 0},
+            "parSeq" , new int[]{0, 0},
+            "parInt" , new int[]{0, 0}
+    );
+
+    private ArrayList arrayData = new ArrayList();
     private static final Logger logger = LoggerFactory.getLogger(Mutator.class);
     public Mutator(String modelFile, File fileMutants, String envTarget) throws IOException {
 
@@ -118,7 +131,19 @@ public class Mutator {
         return info;
     }
 
+    private void setKilledData(String key, int generatedMutants, int killedMutants)
+    {
+        killedData.get(key)[0] = generatedMutants;
+        killedData.get(key)[1] = killedMutants;
+    }
+
+    private void addKilledData(Object val1, Object val2, Object val3)
+    {
+        arrayData.addAll(Arrays.asList(val1, val2, val3));
+    }
+
     public String verifyMutants(String pathIn, String pathVerifyTa, String pathQuery) throws IOException, InterruptedException {
+        addKilledData("Operator", "Generated mutants", "Killed mutants");
         String log = "";
         int killedTmi =  killedMutants(this.threadsTmi, pathIn, pathVerifyTa, pathQuery);
         int killedTad = killedMutants(this.threadsTad, pathIn, pathVerifyTa, pathQuery);
@@ -130,12 +155,23 @@ public class Mutator {
         int killedCxs = killedMutants(this.threadsCxs, pathIn, pathVerifyTa, pathQuery);
         int killedCcn = killedMutants(this.threadsCcn, pathIn, pathVerifyTa, pathQuery);
         int killedBroadChan = killedMutants(this.threadsBroadChan, pathIn, pathVerifyTa, pathQuery);
+        setKilledData("broadChan", threadsBroadChan.size(), killedBroadChan);
+        addKilledData("broadChan", threadsBroadChan.size(), killedBroadChan);
         int killedParInt = killedMutants(this.threadsParInt, pathIn, pathVerifyTa, pathQuery);
+        setKilledData("parInt", threadsParInt.size(), killedParInt);
+        addKilledData("parInt", threadsParInt.size(), killedParInt);
         int killedParSeq = killedMutants(this.threadsParSeq, pathIn, pathVerifyTa, pathQuery);
+        setKilledData("parSeq", threadsParSeq.size(), killedParSeq);
+        addKilledData("parSeq", threadsParSeq.size(), killedParSeq);
         int killedMaskVarClocks = killedMutants(this.threadsMaskVarClocks, pathIn, pathVerifyTa, pathQuery);
+        setKilledData("maskVarClocks", threadsMaskVarClocks.size(), killedMaskVarClocks);
+        addKilledData("maskVarClocks", threadsMaskVarClocks.size(), killedMaskVarClocks);
         int killedMaskVarChannels = killedMutants(this.threadsMaskVarChannels, pathIn, pathVerifyTa, pathQuery);
+        setKilledData("maskVarChannels", threadsMaskVarChannels.size(), killedMaskVarChannels);
+        addKilledData("maskVarChannels", threadsMaskVarChannels.size(), killedMaskVarChannels);
         int killedUrgChan = killedMutants(this.threadsUrgChan, pathIn, pathVerifyTa, pathQuery);
-
+        setKilledData("urgChan", threadsUrgChan.size(), killedUrgChan);
+        addKilledData("urgChan", threadsUrgChan.size(), killedUrgChan);
 
         log = log.concat("Tmi killed ");
         log = log.concat(Integer.toString(killedTmi));
@@ -161,11 +197,11 @@ public class Mutator {
         log = log.concat(Integer.toString(killedParInt));
         log = log.concat("\nParSeq killed ");
         log = log.concat(Integer.toString(killedParSeq));
-        log = log.concat("\nMaskVarClocks killed");
+        log = log.concat("\nMaskVarClocks killed ");
         log = log.concat(Integer.toString(killedMaskVarClocks));
-        log = log.concat("\nMaskVarChannels killed");
+        log = log.concat("\nMaskVarChannels killed ");
         log = log.concat(Integer.toString(killedMaskVarChannels));
-        log = log.concat("\nUrgChan killed");
+        log = log.concat("\nUrgChan killed ");
         log = log.concat(Integer.toString(killedUrgChan));
         log = log.concat("\nScore ").concat(Integer.toString(
                 killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+
@@ -213,6 +249,7 @@ public class Mutator {
                     break;
                 }
             }
+            //System.out.println("Mutant "+ mutantPath + " not killed: " +line);
         }
         return dead;
     }
@@ -447,35 +484,40 @@ public class Mutator {
         }
     }
     public void prepareMaskVarClocksOp(String clockTarget) {
-        if (listener.getClockToTemplate().containsKey(clockTarget)) {
-            for (String template : listener.getClockToTemplate().get(clockTarget)) {
+        HashMap<String, ArrayList<String>> clockToTemplate = listener.getClockToTemplate();
+        if (clockToTemplate.containsKey(clockTarget)) {
+            ArrayList<String> clockInfo = clockToTemplate.get(clockTarget);
+            String declaration = clockInfo.remove(0); // The way the var is declared is stored in the first element.
+
+            for (String template : clockInfo) {
+                System.out.println("Template: " + template);
                 threadsMaskVarClocks.add(new Thread(() -> {
                     UppaalVisitor eval = new UppaalVisitor(
                             template,
                             parser.getClockEnv(),
                             null,
-                            clockTarget,
+                            declaration,
                             "maskVarClocks"
                     );
-                    try (FileWriter writer = new FileWriter(new File(this.fileMutants, "MaskVarClock_"+template + ".xml"))){
+                    try (FileWriter writer = new FileWriter(new File(this.fileMutants, "MaskVarClock_" + template + ".xml"))) {
                         writer.write(eval.visit(tree));
                     } catch (IOException ex) {
                         logger.error("Error writing to file {}", ex.toString());
                     }
-                },"MaskVarClock_"+template));
+                }, "MaskVarClock_" + template));
             }
-        } else {
-            logger.debug("Clock " + clockTarget + " is not a global variable.");
         }
     }
 
     public void prepareMaskVarChannelsOp(String varTarget) {
-        HashMap<String, HashSet<String>> globalChans = listener.getChanToTemplate();
+        HashMap<String, ArrayList<String>> globalChans = listener.getChanToTemplate();
         for (var entry : globalChans.entrySet()) {
             logger.debug(entry.getKey() + ":" + entry.getValue());
         }
         if (globalChans.containsKey(varTarget)) {
-            for (String template : globalChans.get(varTarget)) {
+            ArrayList<String> chanInfo = globalChans.get(varTarget);
+            String declaration = chanInfo.remove(0);
+            for (String template : chanInfo) {
                 threadsMaskVarChannels.add(new Thread(() -> {
                     UppaalVisitor eval = new UppaalVisitor(
                             template,
@@ -872,6 +914,24 @@ public class Mutator {
                 }
             }, "ccn"+ idCcn +".xml"));
         }
+    }
+
+    public String getJSONKilledMutants() {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(killedData);
+    }
+
+    public String getCSVKilledMutants() {
+        StringBuilder csv = new StringBuilder("");
+        for (int i = 2; i < arrayData.size(); i+=3) {
+            csv.append(arrayData.get(i - 2).toString());
+            csv.append(",");
+            csv.append(arrayData.get(i - 1).toString());
+            csv.append(",");
+            csv.append(arrayData.get(i).toString());
+            csv.append("\n");
+        }
+        return csv.toString();
     }
 }
 

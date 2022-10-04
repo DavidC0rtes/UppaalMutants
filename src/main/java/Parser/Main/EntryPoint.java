@@ -191,7 +191,6 @@ public class EntryPoint {
         long endTime = System.currentTimeMillis();
 
         long duration = (endTime - startTime);
-
         output = output.concat("Time execution: " +
                 String.format("%d min, %d sec",
                 TimeUnit.MILLISECONDS.toMinutes(duration),
@@ -205,6 +204,19 @@ public class EntryPoint {
                 myWriter.write(output);
                 myWriter.close();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Create JSON report file
+        try (FileWriter writer = new FileWriter(new File(fileMutants, "report.json"))){
+            writer.write(mutator.getJSONKilledMutants());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // Create CSV report file
+        try (FileWriter writer = new FileWriter(new File(fileMutants, "report.csv"))){
+            writer.write(mutator.getCSVKilledMutants());
         } catch (IOException e) {
             e.printStackTrace();
         }

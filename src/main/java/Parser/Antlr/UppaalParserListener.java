@@ -1162,6 +1162,16 @@ public interface UppaalParserListener extends ParseTreeListener {
 	 */
 	void exitSelectList(UppaalParser.SelectListContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link UppaalParser#labelComments}.
+	 * @param ctx the parse tree
+	 */
+	void enterLabelComments(UppaalParser.LabelCommentsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link UppaalParser#labelComments}.
+	 * @param ctx the parse tree
+	 */
+	void exitLabelComments(UppaalParser.LabelCommentsContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code SumGuard}
 	 * labeled alternative in {@link UppaalParser#guardExpr}.
 	 * @param ctx the parse tree

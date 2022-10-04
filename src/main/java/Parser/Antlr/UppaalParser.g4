@@ -491,7 +491,7 @@ labelTransSyncOutput: (OPEN_SYNC (expr '!')? CLOSE_LABEL)
                         //due to a transition can not has two synchro labels
                         this.transitionsTad.get(currentEnv).get(currentSource).remove(currentTarget);
                     } ;
-labelTrans: (labelSelect misc* | labelUpdate misc* ) ;
+labelTrans: (labelSelect misc* | labelUpdate misc* | labelComments misc* ) ;
 labelUpdate :	OPEN_LBLTR misc* expr (',' expr)* CLOSE_LABEL ;
 
 labelSelect :   OPEN_SELECT misc* selectList CLOSE_LABEL ;
@@ -499,6 +499,8 @@ labelSelect :   OPEN_SELECT misc* selectList CLOSE_LABEL ;
 selectList  :   IDENTIFIER ':' type
             |   selectList ',' IDENTIFIER ':' type
             ;
+
+labelComments : OPEN_LBLCOM  anything CLOSE_LABEL ;
 guardExpr
 //locals[boolean isClockId = false, boolean isClockIdAux= false]
             :   IDENTIFIER

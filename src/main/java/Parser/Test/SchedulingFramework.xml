@@ -447,5 +447,9 @@ system Task, P0, P1, Bus, Policy_FPS, Policy_FIFO;</system>
 			<formula>A[] forall (i : t_id) not Task(i).Error</formula>
 			<comment></comment>
 		</query>
+		<query>
+			<formula>A[] not deadlock</formula>
+			<comment></comment>
+		</query>
 	</queries>
 </nta>
