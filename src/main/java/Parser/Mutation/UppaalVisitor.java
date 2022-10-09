@@ -21,7 +21,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private String locationSmi = "";
 
     private HashMap<String, HashSet<ClockType>> clockEnv;
-    private ChanType chanTarget;
+    private String chanTarget;
     private String currentEnv = "Global";
     private int idCxlOperator = 0;
     private int indexCxl = 0;
@@ -73,7 +73,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
      public UppaalVisitor(
              String envTarget,
              HashMap<String, HashSet<ClockType>> clockEnv,
-             ChanType chanTarget,
+             String chanTarget,
              String varTarget,
              String operator
      )
@@ -320,23 +320,25 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             List<UppaalParser.VariableIDContext> _copy = new ArrayList<>(variablesId);
 
             for(UppaalParser.VariableIDContext varID : _copy) {
-                if (varID.IDENTIFIER().getText().equals(chanTarget.getName())) {
+                if (varID.IDENTIFIER().getText().equals(chanTarget)) {
                     varDecl.append(prefixTarget +" chan ")
-                            .append(varID.getText());
+                            .append(varID.getText())
+                            .append(";\n");
 
                 }
                 // Prevent re-declarations.
-                variablesId.removeIf(x -> x.IDENTIFIER().getText().equals(chanTarget.getName()));
+                variablesId.removeIf(x -> x.IDENTIFIER().getText().equals(chanTarget));
             }
         }
 
         if (variablesId.size() > 0) {
             varDecl.append(type)
                     .append(" ")
-                    .append(extractChildren(variablesId));
+                    .append(extractChildren(variablesId))
+                    .append(";");
         }
 
-        varDecl.append(";");
+
         return varDecl.toString();
     }
 
@@ -896,8 +898,8 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         List<UppaalParser.LabelTransSyncInputContext> labelsInput = ctx.labelTransSyncInput();
         for(UppaalParser.LabelTransSyncInputContext label: labelsInput){
             transition = transition.concat(visit(label)).concat("\n");
-
-            if (ntaOperator.equals("parSeq") && label.expr().getText().equals(chanTarget.getName())) {
+            String chanName = label.expr().getText().split("\\[")[0];
+            if (ntaOperator.equals("parSeq") && chanName.equals(chanTarget)) {
                 transition = transition.concat(
                         String.format("<label kind='guard'>%s%s%d</label>\n", newClock, "&gt;", 1)
                 );
@@ -908,7 +910,8 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         for(UppaalParser.LabelTransSyncOutputContext label: labelsOutput) {
             transition = transition.concat(visit(label)).concat("\n");
 
-            if (ntaOperator.equals("parSeq") && label.expr().getText().equals(chanTarget.getName())) {
+            String chanName = label.expr().getText().split("\\[")[0];
+            if (ntaOperator.equals("parSeq") && chanName.equals(chanTarget)) {
                 transition = transition.concat(
                         String.format("<label kind='update'>%s%s%d</label>\n", newClock, ":=", 1)
                 );
@@ -983,15 +986,15 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     public String visitLabelTransSyncInput(UppaalParser.LabelTransSyncInputContext ctx) {
         this.isControllable = true;
         String label = ctx.OPEN_SYNC().getText();
-        if(ctx.expr()!=null){
+        if(ctx.expr()!=null) {
             String chanName = visit(ctx.expr());
-            label = label.concat(chanName);
-
-            if (chanTarget != null && chanName.equals(this.chanTarget.getName())) {
+            if (chanTarget != null && chanTarget.equals(chanName.split("\\[")[0])) {
                 if (this.ntaOperator.equals("parInt") || this.ntaOperator.equals("parSeq")) {
+                    //System.out.println("HOLA");
                     return "";
                 }
             }
+            label = label.concat(chanName);
         }
         label = label.concat("?</label>");
         return label;
@@ -1002,6 +1005,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         String label = ctx.OPEN_SYNC().getText();
         if(ctx.expr()!=null){
             label = label.concat(visit(ctx.expr()));
+            //System.out.println(visit(ctx.expr()));
         }
         label = label.concat("!</label>");
         return label;

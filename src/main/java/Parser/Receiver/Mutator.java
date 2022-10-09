@@ -249,7 +249,8 @@ public class Mutator {
                     break;
                 }
             }
-            //System.out.println("Mutant "+ mutantPath + " not killed: " +line);
+
+            System.out.println("Mutant "+ mutantPath + " result: " +line);
         }
         return dead;
     }
@@ -421,21 +422,24 @@ public class Mutator {
 
         // Only interested in p2p global channels.
         ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
-        candidates.removeIf(x -> x.getPrefix().equals(prefix));
+
+        List<ChanType> finalCandidates = new ArrayList<>(candidates);
+        finalCandidates.removeIf(x -> x.getPrefix().equals(prefix));
+
         String operator = prefix.equals("broadcast") ? "broadChan" : "urgChan";
 
-        for (ChanType channel : candidates) {
+        for (ChanType channel : finalCandidates) {
 
             threadMap.get(prefix).add(new Thread(() -> {
                 UppaalVisitor eval = new UppaalVisitor(
                         this.envTarget,
                         parser.getClockEnv(),
-                        channel,
+                        channel.getName(),
                         "",
                         operator
                 );
 
-                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "broadChan_" + channel.getName() + ".xml"))) {
+                try (FileWriter writer = new FileWriter(new File(this.fileMutants, operator + "_" + channel.getName() + ".xml"))) {
                     writer.write(eval.visit(tree));
                 } catch (IOException e) {
                     logger.error("Error writing to file:{}", e.toString());
@@ -446,7 +450,8 @@ public class Mutator {
 
     public void prepareParIntOperator() {
         ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
-        for(ChanType channel : candidates) {
+        Set<String> chanNames = listener.getChanToTemplate().keySet();
+        for(String channel : chanNames) {
             threadsParInt.add(new Thread(() -> {
                 UppaalVisitor eval = new UppaalVisitor(
                         this.envTarget,
@@ -455,18 +460,19 @@ public class Mutator {
                         "",
                         "parInt"
                 );
-                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parInt_" + channel.getName() + ".xml"))){
+                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parInt_" + channel + ".xml"))){
                     writer.write(eval.visit(tree));
                 } catch (IOException ex) {
                     logger.error("Error writing to file {}", ex.toString());
                 }
-            },"parInt_" + channel.getName() + ".xml"));
+            },"parInt_" + channel + ".xml"));
         }
     }
 
     public void prepareParSeqOperator() {
         ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
-        for(ChanType channel : candidates) {
+        Set<String> chanNames = listener.getChanToTemplate().keySet();
+        for (String channel : chanNames) {
             threadsParSeq.add(new Thread(() -> {
                 UppaalVisitor eval = new UppaalVisitor(
                         this.envTarget,
@@ -475,22 +481,19 @@ public class Mutator {
                         "",
                         "parSeq"
                 );
-                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parSeq_"+channel.getName() + ".xml"))){
+                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parSeq_"+channel + ".xml"))){
                     writer.write(eval.visit(tree));
                 } catch (IOException ex) {
                     logger.error("Error writing to file {}", ex.toString());
                 }
-            }, "parSeq_"+channel.getName() + ".xml"));
+            }, "parSeq_"+channel + ".xml"));
         }
     }
-    public void prepareMaskVarClocksOp(String clockTarget) {
+    public void prepareMaskVarClocksOp() {
         HashMap<String, ArrayList<String>> clockToTemplate = listener.getClockToTemplate();
-        if (clockToTemplate.containsKey(clockTarget)) {
-            ArrayList<String> clockInfo = clockToTemplate.get(clockTarget);
-            String declaration = clockInfo.remove(0); // The way the var is declared is stored in the first element.
-
-            for (String template : clockInfo) {
-                System.out.println("Template: " + template);
+        for (var entry: clockToTemplate.entrySet()) {
+            String declaration = entry.getValue().remove(0);
+            for (String template : entry.getValue()) {
                 threadsMaskVarClocks.add(new Thread(() -> {
                     UppaalVisitor eval = new UppaalVisitor(
                             template,
@@ -499,7 +502,9 @@ public class Mutator {
                             declaration,
                             "maskVarClocks"
                     );
-                    try (FileWriter writer = new FileWriter(new File(this.fileMutants, "MaskVarClock_" + template + ".xml"))) {
+                    try (FileWriter writer = new FileWriter(new File(
+                            this.fileMutants,
+                            "MaskVarClock_" + entry.getKey() + "_" + template + ".xml"))) {
                         writer.write(eval.visit(tree));
                     } catch (IOException ex) {
                         logger.error("Error writing to file {}", ex.toString());
@@ -509,32 +514,29 @@ public class Mutator {
         }
     }
 
-    public void prepareMaskVarChannelsOp(String varTarget) {
+    public void prepareMaskVarChannelsOp() {
         HashMap<String, ArrayList<String>> globalChans = listener.getChanToTemplate();
         for (var entry : globalChans.entrySet()) {
-            logger.debug(entry.getKey() + ":" + entry.getValue());
-        }
-        if (globalChans.containsKey(varTarget)) {
-            ArrayList<String> chanInfo = globalChans.get(varTarget);
-            String declaration = chanInfo.remove(0);
-            for (String template : chanInfo) {
+            String declaration = entry.getValue().remove(0);
+            for ( String template : entry.getValue()) {
                 threadsMaskVarChannels.add(new Thread(() -> {
                     UppaalVisitor eval = new UppaalVisitor(
                             template,
                             parser.getClockEnv(),
                             null,
-                            varTarget,
+                            declaration,
                             "maskVarChannels"
                     );
-                    try (FileWriter writer = new FileWriter(new File(this.fileMutants, "MaskVarChannel_"+template + ".xml"))){
+                    try (FileWriter writer = new FileWriter(new File(
+                            this.fileMutants, "MaskVarChannel_" + entry.getKey() + "_" +template + ".xml"
+                    ))) {
                         writer.write(eval.visit(tree));
                     } catch (IOException ex) {
                         logger.error("Error writing to file {}", ex.toString());
                     }
-                },"MaskVarChannel_"+template));
+                }, "MaskVarChannel_" + template));
             }
-        } else {
-            logger.debug("Clock " + varTarget + " is not a global variable.");
+            logger.debug(entry.getKey() + ":" + entry.getValue());
         }
     }
 

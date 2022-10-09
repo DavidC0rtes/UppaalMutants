@@ -2,6 +2,7 @@ package Parser.NTAExtension;
 
 import Parser.Antlr.UppaalParser;
 import Parser.Antlr.UppaalParserBaseListener;
+import org.antlr.v4.runtime.RuleContext;
 
 import java.util.*;
 

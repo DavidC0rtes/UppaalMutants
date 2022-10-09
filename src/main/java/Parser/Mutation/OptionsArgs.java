@@ -115,16 +115,12 @@ public class OptionsArgs {
         );
 
         Option maskVarClocks = Option.builder("maskVarClocks")
-                .numberOfArgs(1)
-                .desc("Enables the maskvar operator over clocks.")
-                .valueSeparator(' ')
-                .argName("clock").build();
+                .hasArg(false)
+                .desc("Enables the maskvar operator over clocks.").build();
 
         Option maskVarChannels = Option.builder("maskVarChannels")
-                .numberOfArgs(1)
-                .desc("Enables the maskvar operator over channels.")
-                .valueSeparator(' ')
-                .argName("channel").build();
+                .hasArg(false)
+                .desc("Enables the maskvar operator over channels.").build();
 
         Option envOpt = Option.builder("env")
                 .hasArg()
