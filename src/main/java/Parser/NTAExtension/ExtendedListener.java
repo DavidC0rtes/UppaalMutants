@@ -6,9 +6,19 @@ import org.antlr.v4.runtime.RuleContext;
 
 import java.util.*;
 
+/**
+ * In order to de-couple the grammar from the application code i built this class
+ * to collect some useful information at parse time.
+ */
 public class ExtendedListener extends UppaalParserBaseListener {
     private final HashMap<String, ArrayList<String>> clockToTemplate = new HashMap<>();
     private final HashMap<String, ArrayList<String>> chanToTemplate = new HashMap<>();
+
+    public HashMap<String, ArrayList<Integer>> getTransHashCodes() {
+        return transHashCodes;
+    }
+
+    private HashMap<String, ArrayList<Integer>> transHashCodes = new HashMap<>();
     private String currentEnv = "Global";
 
     @Override
@@ -31,6 +41,11 @@ public class ExtendedListener extends UppaalParserBaseListener {
                                 varId.IDENTIFIER().getText(),
                                 new ArrayList<>(Collections.singleton(varId.getText()))
                         );
+
+                        transHashCodes.put(
+                                varId.IDENTIFIER().getText(),
+                                new ArrayList<>()
+                        );
                     }
                 }
             }
@@ -52,15 +67,24 @@ public class ExtendedListener extends UppaalParserBaseListener {
     @Override
     public void enterLabelTransSyncInput(UppaalParser.LabelTransSyncInputContext ctx) {
         String key = ctx.expr().getText().split("\\[")[0];
-        if (chanToTemplate.containsKey(key) && !chanToTemplate.get(key).contains(currentEnv)) {
-            chanToTemplate.get(key).add(currentEnv);
+        if (chanToTemplate.containsKey(key)) {
+
+            transHashCodes.get(key).add(ctx.hashCode());
+
+            if (!chanToTemplate.get(key).contains(currentEnv))
+                chanToTemplate.get(key).add(currentEnv);
         }
     }
     @Override
     public void enterLabelTransSyncOutput(UppaalParser.LabelTransSyncOutputContext ctx) {
         String key = ctx.expr().getText().split("\\[")[0];
-        if (chanToTemplate.containsKey(key) && !chanToTemplate.get(key).contains(currentEnv)) {
-            chanToTemplate.get(key).add(currentEnv);
+
+        if (chanToTemplate.containsKey(key)) {
+
+            //transHashCodes.get(key).add(ctx.hashCode());
+
+            if (!chanToTemplate.get(key).contains(currentEnv))
+                chanToTemplate.get(key).add(currentEnv);
         }
     }
 

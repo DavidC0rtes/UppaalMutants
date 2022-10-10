@@ -17,6 +17,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private String sourceTad = "";
     private String targetTad = "";
     private String outputTad = "";
+    private int transHashCode;
 
     private String locationSmi = "";
 
@@ -88,6 +89,12 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             setNewClock();
         }
     }
+
+    // Semi builder pattern
+    public void addHashCodeTarget(int code) {
+         transHashCode = code;
+    }
+
 
     private void setNewClock() {
          newClock = String.format("dummy%d", System.currentTimeMillis() / 1000L);
@@ -990,8 +997,13 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             String chanName = visit(ctx.expr());
             if (chanTarget != null && chanTarget.equals(chanName.split("\\[")[0])) {
                 if (this.ntaOperator.equals("parInt") || this.ntaOperator.equals("parSeq")) {
-                    //System.out.println("HOLA");
-                    return "";
+
+                    // check if we are on the target transition
+                    if (ctx.hashCode() == transHashCode) {
+                        return "";
+                    }
+                    //System.out.println("hash code is " + ctx.hashCode() + " target is " + transHashCode);
+                    //return "";
                 }
             }
             label = label.concat(chanName);

@@ -449,23 +449,30 @@ public class Mutator {
     }
 
     public void prepareParIntOperator() {
-        ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
         Set<String> chanNames = listener.getChanToTemplate().keySet();
         for(String channel : chanNames) {
-            threadsParInt.add(new Thread(() -> {
-                UppaalVisitor eval = new UppaalVisitor(
-                        this.envTarget,
-                        parser.getClockEnv(),
-                        channel,
-                        "",
-                        "parInt"
-                );
-                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parInt_" + channel + ".xml"))){
-                    writer.write(eval.visit(tree));
-                } catch (IOException ex) {
-                    logger.error("Error writing to file {}", ex.toString());
-                }
-            },"parInt_" + channel + ".xml"));
+            int counter = 1;
+            for (int hashCode : listener.getTransHashCodes().get(channel)) {
+                int finalCounter = counter;
+                threadsParInt.add(new Thread(() -> {
+                    UppaalVisitor eval = new UppaalVisitor(
+                            this.envTarget,
+                            parser.getClockEnv(),
+                            channel,
+                            "",
+                            "parInt"
+                    );
+
+                    eval.addHashCodeTarget(hashCode);
+
+                    try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parInt_" + channel + finalCounter + ".xml"))){
+                        writer.write(eval.visit(tree));
+                    } catch (IOException ex) {
+                        logger.error("Error writing to file {}", ex.toString());
+                    }
+                },"parInt_" + channel + counter + ".xml"));
+                counter++;
+            }
         }
     }
 
@@ -536,7 +543,6 @@ public class Mutator {
                     }
                 }, "MaskVarChannel_" + template));
             }
-            logger.debug(entry.getKey() + ":" + entry.getValue());
         }
     }
 

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+chan signal;</declaration>
+	<template>
+		<name x="5" y="5">Template</name>
+		<declaration>// Place local declarations here.</declaration>
+		<location id="id0" x="0" y="-144">
+		</location>
+		<location id="id1" x="127" y="-144">
+		</location>
+		<init ref="id0"/>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<nail x="59" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="18" y="-161">signal!</label>
+		</transition>
+	</template>
+	<template>
+		<name>Template0</name>
+		<location id="id2" x="-25" y="-136">
+		</location>
+		<location id="id3" x="-93" y="-59">
+		</location>
+		<location id="id4" x="25" y="-59">
+		</location>
+		<init ref="id2"/>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id4"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="synchronisation" x="-68" y="-42">signal?</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="-127" y="-110">signal?</label>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+Process = Template();
+// List one or more processes to be composed into a system.
+system Process;
+    </system>
+	<queries>
+		<query>
+			<formula>E&lt;&gt; not deadlock</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] not deadlock</formula>
+			<comment></comment>
+		</query>
+	</queries>
+</nta>
