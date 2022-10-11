@@ -4,10 +4,8 @@ import Parser.Antlr.UppaalLexer;
 import Parser.Antlr.UppaalParser;
 import Parser.Graph.Graph;
 import Parser.Mutation.ChanType;
-import Parser.Mutation.ClockType;
 import Parser.Mutation.UppaalVisitor;
 import Parser.NTAExtension.ExtendedListener;
-import Parser.OperatorCommands.SmiNoRedundant;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.antlr.v4.runtime.CharStream;
@@ -20,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * Class <code>Mutator</code> defines the "engine" responsible
@@ -452,7 +449,7 @@ public class Mutator {
         Set<String> chanNames = listener.getChanToTemplate().keySet();
         for(String channel : chanNames) {
             int counter = 1;
-            for (int hashCode : listener.getTransHashCodes().get(channel)) {
+            for (int hashCode : listener.getChanToInTran().get(channel)) {
                 int finalCounter = counter;
                 threadsParInt.add(new Thread(() -> {
                     UppaalVisitor eval = new UppaalVisitor(
@@ -477,23 +474,33 @@ public class Mutator {
     }
 
     public void prepareParSeqOperator() {
-        ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
         Set<String> chanNames = listener.getChanToTemplate().keySet();
+        int counter = 0;
         for (String channel : chanNames) {
-            threadsParSeq.add(new Thread(() -> {
-                UppaalVisitor eval = new UppaalVisitor(
-                        this.envTarget,
-                        parser.getClockEnv(),
-                        channel,
-                        "",
-                        "parSeq"
-                );
-                try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parSeq_"+channel + ".xml"))){
-                    writer.write(eval.visit(tree));
-                } catch (IOException ex) {
-                    logger.error("Error writing to file {}", ex.toString());
+            for (int outputHash : listener.getChanToOutTran().get(channel)) {
+                for (int inputHash : listener.getChanToInTran().get(channel)) {
+                    int finalCounter = counter;
+                    threadsParSeq.add(new Thread(() -> {
+                        UppaalVisitor eval = new UppaalVisitor(
+                                this.envTarget,
+                                parser.getClockEnv(),
+                                channel,
+                                "",
+                                "parSeq"
+                        );
+
+                        eval.addHashCodeTarget(inputHash);
+                        eval.addOutHashCode(outputHash);
+
+                        try (FileWriter writer = new FileWriter(new File(this.fileMutants, "parSeq_"+channel + finalCounter +".xml"))){
+                            writer.write(eval.visit(tree));
+                        } catch (IOException ex) {
+                            logger.error("Error writing to file {}", ex.toString());
+                        }
+                    }, "parSeq_"+channel + counter+".xml"));
+                    counter++;
                 }
-            }, "parSeq_"+channel + ".xml"));
+            }
         }
     }
     public void prepareMaskVarClocksOp() {

@@ -17,7 +17,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private String sourceTad = "";
     private String targetTad = "";
     private String outputTad = "";
-    private int transHashCode;
+    private int transHashCode, outHashCode;
 
     private String locationSmi = "";
 
@@ -94,6 +94,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     public void addHashCodeTarget(int code) {
          transHashCode = code;
     }
+    public void addOutHashCode(int code) { outHashCode = code; }
 
 
     private void setNewClock() {
@@ -906,7 +907,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         for(UppaalParser.LabelTransSyncInputContext label: labelsInput){
             transition = transition.concat(visit(label)).concat("\n");
             String chanName = label.expr().getText().split("\\[")[0];
-            if (ntaOperator.equals("parSeq") && chanName.equals(chanTarget)) {
+            if (ntaOperator.equals("parSeq") && chanName.equals(chanTarget) && transHashCode == label.hashCode()) {
                 transition = transition.concat(
                         String.format("<label kind='guard'>%s%s%d</label>\n", newClock, "&gt;", 1)
                 );
@@ -918,7 +919,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             transition = transition.concat(visit(label)).concat("\n");
 
             String chanName = label.expr().getText().split("\\[")[0];
-            if (ntaOperator.equals("parSeq") && chanName.equals(chanTarget)) {
+            if (ntaOperator.equals("parSeq") && chanName.equals(chanTarget) && outHashCode == label.hashCode()) {
                 transition = transition.concat(
                         String.format("<label kind='update'>%s%s%d</label>\n", newClock, ":=", 1)
                 );

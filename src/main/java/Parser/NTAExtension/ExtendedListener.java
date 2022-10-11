@@ -2,7 +2,6 @@ package Parser.NTAExtension;
 
 import Parser.Antlr.UppaalParser;
 import Parser.Antlr.UppaalParserBaseListener;
-import org.antlr.v4.runtime.RuleContext;
 
 import java.util.*;
 
@@ -14,11 +13,17 @@ public class ExtendedListener extends UppaalParserBaseListener {
     private final HashMap<String, ArrayList<String>> clockToTemplate = new HashMap<>();
     private final HashMap<String, ArrayList<String>> chanToTemplate = new HashMap<>();
 
-    public HashMap<String, ArrayList<Integer>> getTransHashCodes() {
-        return transHashCodes;
+    public HashMap<String, ArrayList<Integer>> getChanToInTran() {
+        return chanToInTran;
     }
 
-    private HashMap<String, ArrayList<Integer>> transHashCodes = new HashMap<>();
+    private HashMap<String, ArrayList<Integer>> chanToInTran = new HashMap<>();
+
+    public HashMap<String, ArrayList<Integer>> getChanToOutTran() {
+        return chanToOutTran;
+    }
+
+    private HashMap<String, ArrayList<Integer>> chanToOutTran = new HashMap<>();
     private String currentEnv = "Global";
 
     @Override
@@ -42,7 +47,11 @@ public class ExtendedListener extends UppaalParserBaseListener {
                                 new ArrayList<>(Collections.singleton(varId.getText()))
                         );
 
-                        transHashCodes.put(
+                        chanToInTran.put(
+                                varId.IDENTIFIER().getText(),
+                                new ArrayList<>()
+                        );
+                        chanToOutTran.put(
                                 varId.IDENTIFIER().getText(),
                                 new ArrayList<>()
                         );
@@ -69,7 +78,7 @@ public class ExtendedListener extends UppaalParserBaseListener {
         String key = ctx.expr().getText().split("\\[")[0];
         if (chanToTemplate.containsKey(key)) {
 
-            transHashCodes.get(key).add(ctx.hashCode());
+            chanToInTran.get(key).add(ctx.hashCode());
 
             if (!chanToTemplate.get(key).contains(currentEnv))
                 chanToTemplate.get(key).add(currentEnv);
@@ -81,7 +90,7 @@ public class ExtendedListener extends UppaalParserBaseListener {
 
         if (chanToTemplate.containsKey(key)) {
 
-            //transHashCodes.get(key).add(ctx.hashCode());
+            chanToOutTran.get(key).add(ctx.hashCode());
 
             if (!chanToTemplate.get(key).contains(currentEnv))
                 chanToTemplate.get(key).add(currentEnv);
