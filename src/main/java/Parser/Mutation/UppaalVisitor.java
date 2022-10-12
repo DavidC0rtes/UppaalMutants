@@ -919,10 +919,12 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             transition = transition.concat(visit(label)).concat("\n");
 
             String chanName = label.expr().getText().split("\\[")[0];
-            if (ntaOperator.equals("parSeq") && chanName.equals(chanTarget) && outHashCode == label.hashCode()) {
-                transition = transition.concat(
-                        String.format("<label kind='update'>%s%s%d</label>\n", newClock, ":=", 1)
-                );
+            if (chanName.equals(chanTarget) && outHashCode == label.hashCode()) {
+                if (ntaOperator.equals("parSeq")) {
+                    transition = transition.concat(
+                            String.format("<label kind='update'>%s%s%d</label>\n", newClock, ":=", 1)
+                    );
+                }
             }
         }
 
@@ -1016,9 +1018,17 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     @Override
     public String visitLabelTransSyncOutput(UppaalParser.LabelTransSyncOutputContext ctx) {
         String label = ctx.OPEN_SYNC().getText();
+
         if(ctx.expr()!=null){
-            label = label.concat(visit(ctx.expr()));
-            //System.out.println(visit(ctx.expr()));
+            String chanName = visit(ctx.expr());
+            if (ntaOperator.equals("delOutput")
+                    && chanName.split("\\[")[0].equals(chanTarget)
+                    && ctx.hashCode() == outHashCode
+            ) {
+                return "";
+            }
+
+            label = label.concat(chanName);
         }
         label = label.concat("!</label>");
         return label;

@@ -15,6 +15,7 @@ public class OptionsArgs {
     private boolean log;
     private boolean tmi;
     private boolean tad;
+    private boolean delOutput;
     private String tadSync;
     private boolean tadRandomSync;
     private boolean smi;
@@ -122,6 +123,12 @@ public class OptionsArgs {
                 .hasArg(false)
                 .desc("Enables the maskvar operator over channels.").build();
 
+        Option delOutputOpt = new Option(
+                "delOutput",
+                false,
+                "Enables the DelOutput operator. Deletes an arbitrary output action/transition."
+        );
+
         Option envOpt = Option.builder("env")
                 .hasArg()
                 .desc("Specify the name of the automaton to make the mutants")
@@ -130,7 +137,7 @@ public class OptionsArgs {
         for (Option option : Arrays.asList(
                 helpOpt, modelOpt, queryOpt, verifyOpt, pathOpt, logOpt, tmiOpt, tadOpt,
                 tadSyncOpt, tadRandomOpt, smiOpt, smiNoRedundantOpt, cxlOpt, cxsOpt, ccnOpt, broadChanOpt, parIntOpt,
-                parSeqOpt, maskVarClocks, maskVarChannels, urgChanOpt, envOpt))
+                parSeqOpt, maskVarClocks, maskVarChannels, urgChanOpt, delOutputOpt, envOpt))
         {
             options.addOption(option);
         }
@@ -170,6 +177,7 @@ public class OptionsArgs {
         this.maskVarClocks = line.hasOption("maskVarClocks");
         this.maskVarChannels = line.hasOption("maskVarChannels");
         this.urgChan = line.hasOption("urgChan");
+        this.delOutput = line.hasOption("delOutput");
 
         if(line.hasOption("env")){
             this.env = line.getOptionValue("env");
