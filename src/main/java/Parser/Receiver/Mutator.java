@@ -460,7 +460,7 @@ public class Mutator {
                 } catch (IOException e) {
                     logger.error("Error writing to file:{}", e.toString());
                 }
-            }, operator +"_" + channel + ".xml"));
+            }, operator +"_" + channel.getName() + ".xml"));
         }
     }
 

@@ -153,7 +153,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
                     break;
 
                 case "maskVarChannels":
-                    maskedVar = String.format("channel %s;\n", this.varTarget);
+                    maskedVar = String.format("chan %s;\n", this.varTarget);
                     break;
             }
             declaration = declaration.concat(maskedVar);
