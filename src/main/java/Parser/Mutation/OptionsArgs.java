@@ -29,6 +29,7 @@ public class OptionsArgs {
     private String env;
     private Options options;
     private CommandLine line;
+    private boolean pcr;
 
     public OptionsArgs(){
         this.options = new Options();
@@ -129,6 +130,12 @@ public class OptionsArgs {
                 "Enables the DelOutput operator. Deletes an arbitrary output action/transition."
         );
 
+        Option pcrOpt = new Option(
+                "pcr",
+                false,
+                "Enables the pcr operator. Changes the channel name used in a synchronization label."
+        );
+
         Option envOpt = Option.builder("env")
                 .hasArg()
                 .desc("Specify the name of the automaton to make the mutants")
@@ -137,7 +144,7 @@ public class OptionsArgs {
         for (Option option : Arrays.asList(
                 helpOpt, modelOpt, queryOpt, verifyOpt, pathOpt, logOpt, tmiOpt, tadOpt,
                 tadSyncOpt, tadRandomOpt, smiOpt, smiNoRedundantOpt, cxlOpt, cxsOpt, ccnOpt, broadChanOpt, parIntOpt,
-                parSeqOpt, maskVarClocks, maskVarChannels, urgChanOpt, delOutputOpt, envOpt))
+                parSeqOpt, maskVarClocks, maskVarChannels, urgChanOpt, delOutputOpt, pcrOpt, envOpt))
         {
             options.addOption(option);
         }
@@ -178,6 +185,7 @@ public class OptionsArgs {
         this.maskVarChannels = line.hasOption("maskVarChannels");
         this.urgChan = line.hasOption("urgChan");
         this.delOutput = line.hasOption("delOutput");
+        this.pcr = line.hasOption("pcr");
 
         if(line.hasOption("env")){
             this.env = line.getOptionValue("env");
@@ -332,23 +340,6 @@ public class OptionsArgs {
     public boolean isParInt() { return this.parInt; }
     public void setParInt() { this.parInt = true; }
     public boolean isParSeq() {return this.parSeq;}
-
-    public String[] getMaskVarArgs(String type) {
-        switch (type) {
-            case "clocks":
-                if (this.maskVarClocks) {
-                    return line.getOptionValues("maskVarClocks");
-                }
-                break;
-            case "channels":
-                if (this.maskVarChannels) {
-                    return line.getOptionValues("maskVarChannels");
-                }
-                break;
-        }
-
-        return null;
-    }
 
     public boolean checkOption(String optionName) {
         return this.line.hasOption(optionName);

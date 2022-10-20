@@ -132,7 +132,8 @@ public class EntryPoint {
                 new ParSeq(mutator),
                 new MaskVarClocks(mutator),
                 new MaskVarChannels(mutator),
-                new DelOutput(mutator)
+                new DelOutput(mutator),
+                new Pcr(mutator)
         );
 
         if (!addAllResult) {

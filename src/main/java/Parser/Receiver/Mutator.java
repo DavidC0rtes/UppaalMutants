@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Class <code>Mutator</code> defines the "engine" responsible
@@ -45,6 +46,7 @@ public class Mutator {
     private final ArrayList<Thread> threadsUrgChan = new ArrayList<>();
     private ArrayList<Thread> threadsParSeq = new ArrayList<>();
     private final ArrayList<Thread> threadsdelOutput = new ArrayList<>();
+    private final ArrayList<Thread> threadsPcr = new ArrayList<>();
     private UppaalParser parser;
     private ParseTree tree;
     private ExtendedListener listener;
@@ -56,7 +58,8 @@ public class Mutator {
             "maskVarChannels" , new int[]{0, 0},
             "parSeq" , new int[]{0, 0},
             "parInt" , new int[]{0, 0},
-            "delOutput", new int[]{0,0}
+            "delOutput", new int[]{0,0},
+            "pcr", new int[]{0,0}
     );
 
     private ArrayList arrayData = new ArrayList();
@@ -109,6 +112,7 @@ public class Mutator {
         info = info.concat("maskVarChannels ").concat(Integer.toString(this.threadsMaskVarChannels.size())).concat("\n");
         info = info.concat("urgChan ").concat(Integer.toString(this.threadsUrgChan.size())).concat("\n");
         info = info.concat("delOutput ").concat(Integer.toString(this.threadsdelOutput.size())).concat("\n");
+        info = info.concat("pcr ").concat(Integer.toString(this.threadsPcr.size())).concat("\n");
 
         info = info.concat("Total ").concat(Integer.toString(
                 this.threadsTmi.size()
@@ -127,6 +131,7 @@ public class Mutator {
                         +this.threadsMaskVarChannels.size()
                         +this.threadsUrgChan.size()
                         +this.threadsdelOutput.size()
+                        +this.threadsPcr.size()
         )).concat("\n");
         return info;
     }
@@ -176,6 +181,10 @@ public class Mutator {
         setKilledData("delOutput", threadsdelOutput.size(), killedDelOutput);
         addKilledData("delOutput", threadsdelOutput.size(), killedDelOutput);
 
+        int killedPcr = killedMutants(this.threadsPcr, pathIn, pathVerifyTa, pathQuery);
+        setKilledData("pcr", threadsPcr.size(), killedPcr);
+        addKilledData("pcr", threadsPcr.size(), killedPcr);
+
         log = log.concat("Tmi killed ");
         log = log.concat(Integer.toString(killedTmi));
         log = log.concat("\nTad killed ");
@@ -208,10 +217,12 @@ public class Mutator {
         log = log.concat(Integer.toString(killedUrgChan));
         log = log.concat("\nDelOutput killed ");
         log = log.concat(Integer.toString(killedDelOutput));
+        log = log.concat("\nPcr killed ");
+        log = log.concat(Integer.toString(killedPcr));
         log = log.concat("\nScore ").concat(Integer.toString(
                 killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+
                         killedBroadChan + killedParInt + killedParSeq + killedMaskVarClocks + killedMaskVarChannels
-                        + killedUrgChan + killedDelOutput
+                        + killedUrgChan + killedDelOutput + killedPcr
         )).concat("/").concat(Integer.toString(
                 this.threadsTmi.size()
                         +this.threadsTad.size()
@@ -229,6 +240,7 @@ public class Mutator {
                         +this.threadsMaskVarChannels.size()
                         +this.threadsUrgChan.size()
                         +this.threadsdelOutput.size()
+                        +this.threadsPcr.size()
         ));
         log = log.concat("\n");
         return log;
@@ -289,6 +301,7 @@ public class Mutator {
         this.runThreads(this.threadsMaskVarChannels);
         this.runThreads(this.threadsUrgChan);
         this.runThreads(this.threadsdelOutput);
+        this.runThreads(this.threadsPcr);
     }
 
     public void runThreads(ArrayList<Thread> threads){
@@ -366,6 +379,7 @@ public class Mutator {
         this.joinThreads(this.threadsMaskVarChannels);
         this.joinThreads(this.threadsUrgChan);
         this.joinThreads(this.threadsdelOutput);
+        this.joinThreads(this.threadsPcr);
     }
 
 
@@ -436,13 +450,14 @@ public class Mutator {
                 "urgent", threadsUrgChan
         );
 
-        // Only interested in p2p global channels.
+        // Only interested in global channels.
         ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
 
         List<ChanType> finalCandidates = new ArrayList<>(candidates);
         finalCandidates.removeIf(x -> x.getPrefix().equals(prefix));
 
         String operator = prefix.equals("broadcast") ? "broadChan" : "urgChan";
+
 
         for (ChanType channel : finalCandidates) {
 
@@ -594,6 +609,57 @@ public class Mutator {
                     }
                 }, "delOutput_" + chan + "_" + count+".xml"));
                 count++;
+            }
+        }
+    }
+
+    public void preparePcrOperator() {
+        // Only interested in global channels.
+        ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
+        HashMap<String, ArrayList<String>> chanDeclarations = listener.getChanToTemplate();
+        /**
+         * NON SUBSUMED IF:
+         * 1. The affected action is an input action.
+         * 2. The involved channel is not a broadcast channel.
+         * 3. The new action in the transition is not enabled/reachable in at least one trace.
+         * OR
+         * 1. The affected action is an output action.
+         * 2. The channels are of type broadcast.
+         * 3. The new channel synchronizes with fewer edges than the previous one.
+         */
+
+        ArrayList<ChanType> finalCandidates = new ArrayList<>(candidates);
+        //@todo: implementar el caso cuando el canal es de tipo broadcast.
+        finalCandidates.removeIf(x -> !x.getPrefix().equals("broadcast"));
+        for (ChanType chan : finalCandidates) {
+
+            ChanType chosenChan = chan;
+            do {
+                ArrayList<ChanType> foo = new ArrayList<>(finalCandidates);
+                Collections.shuffle(foo);
+                chosenChan = foo.get(0);
+            } while(chosenChan.getName().equals(chan.getName()));
+
+            for (Integer hashCode : listener.getChanToInTran().get(chan.getName())) {
+                String declaration = chanDeclarations.get(chosenChan.getName()).get(0);
+                threadsPcr.add(new Thread(() -> {
+                    UppaalVisitor eval = new UppaalVisitor(
+                            this.envTarget,
+                            parser.getClockEnv(),
+                            chan.getName(),
+                            declaration,
+                            "pcr"
+                    );
+
+                    eval.addHashCodeTarget(hashCode);
+                    try (FileWriter writer = new FileWriter(new File(
+                            this.fileMutants, "pcr_" + chan.getName() + hashCode + ".xml"
+                    ))) {
+                        writer.write(eval.visit(tree));
+                    } catch (IOException ex) {
+                        logger.error("Error writing to file {}", ex.toString());
+                    }
+                }, "pcr_" + chan.getName() + hashCode + ".xml"));
             }
         }
     }

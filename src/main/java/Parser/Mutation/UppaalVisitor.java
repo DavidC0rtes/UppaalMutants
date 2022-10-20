@@ -998,15 +998,11 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         String label = ctx.OPEN_SYNC().getText();
         if(ctx.expr()!=null) {
             String chanName = visit(ctx.expr());
-            if (chanTarget != null && chanTarget.equals(chanName.split("\\[")[0])) {
+            if (chanTarget != null && chanTarget.equals(chanName.split("\\[")[0]) && ctx.hashCode() == transHashCode) {
                 if (this.ntaOperator.equals("parInt") || this.ntaOperator.equals("parSeq")) {
-
-                    // check if we are on the target transition
-                    if (ctx.hashCode() == transHashCode) {
-                        return "";
-                    }
-                    //System.out.println("hash code is " + ctx.hashCode() + " target is " + transHashCode);
-                    //return "";
+                    return "";
+                } else if (this.ntaOperator.equals("pcr")) {
+                    chanName = varTarget;
                 }
             }
             label = label.concat(chanName);
