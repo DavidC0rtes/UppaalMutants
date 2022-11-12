@@ -963,13 +963,14 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
     @Override
     public String visitLabelTrans(UppaalParser.LabelTransContext ctx) {
-         if (ctx.labelSelect() != null) {
-             return visit(ctx.labelSelect());
-         }
-         if (ctx.labelUpdate() != null) {
-             return visit(ctx.labelUpdate());
-         }
-         return "";
+        String label = "<label kind=";
+        label = label.concat(ctx.STRING().getText());
+        if(ctx.coordinate() != null){
+            label = label.concat(visit(ctx.coordinate()));
+        }
+        label = label.concat(">").concat(ctx.anything().getText());
+        label = label.concat("</label>");
+        return label;
     }
 
     @Override
