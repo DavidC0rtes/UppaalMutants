@@ -24,12 +24,12 @@ public class OptionsArgs {
     private boolean cxs;
     private boolean ccn;
     private boolean broadChan;
-    private boolean parInt, parSeq, maskVarClocks, maskVarChannels = false;
+    private boolean delSync, parSeq, maskVarClocks, maskVarChannels = false;
     private boolean urgChan = false;
     private String env;
     private Options options;
     private CommandLine line;
-    private boolean pcr;
+    private boolean pcr, commLoc, urgLoc;
 
     public OptionsArgs(){
         this.options = new Options();
@@ -105,10 +105,10 @@ public class OptionsArgs {
                 "Enable the urgChan operator. Adds the urgent prefix to an existing channel."
         );
 
-        Option parIntOpt = new Option(
-                "parInt",
+        Option delSyncOpt = new Option(
+                "delSync",
                 false,
-                "Enable the ParInt operator. Deletes an arbitrary input action."
+                "Enables the DelSync operator. Deletes an arbitrary input action."
         );
         Option parSeqOpt = new Option(
                 "parSeq",
@@ -130,10 +130,22 @@ public class OptionsArgs {
                 "Enables the DelOutput operator. Deletes an arbitrary output action/transition."
         );
 
-        Option pcrOpt = new Option(
-                "pcr",
+        Option replaceMsgOpt = new Option(
+                "ReplaceMsg",
                 false,
-                "Enables the pcr operator. Changes the channel name used in a synchronization label."
+                "Enables the ReplaceMsg operator. Replaces the variable used during a synchronization event."
+        );
+
+        Option commLocOpt = new Option(
+                "commLoc",
+                false,
+                "Enables the commLoc operator. One location becomes commited."
+        );
+
+        Option urgLocOpt = new Option(
+                "urgLoc",
+                false,
+                "Enables the urgLoc operator. One location becomes urgent."
         );
 
         Option envOpt = Option.builder("env")
@@ -143,8 +155,9 @@ public class OptionsArgs {
 
         for (Option option : Arrays.asList(
                 helpOpt, modelOpt, queryOpt, verifyOpt, pathOpt, logOpt, tmiOpt, tadOpt,
-                tadSyncOpt, tadRandomOpt, smiOpt, smiNoRedundantOpt, cxlOpt, cxsOpt, ccnOpt, broadChanOpt, parIntOpt,
-                parSeqOpt, maskVarClocks, maskVarChannels, urgChanOpt, delOutputOpt, pcrOpt, envOpt))
+                tadSyncOpt, tadRandomOpt, smiOpt, smiNoRedundantOpt, cxlOpt, cxsOpt, ccnOpt, broadChanOpt, delSyncOpt,
+                parSeqOpt, maskVarClocks, maskVarChannels, urgChanOpt, delOutputOpt, replaceMsgOpt, commLocOpt, urgLocOpt,
+                envOpt))
         {
             options.addOption(option);
         }
@@ -179,13 +192,15 @@ public class OptionsArgs {
         this.cxs = line.hasOption("cxs");
         this.ccn = line.hasOption("ccn");
         this.broadChan = line.hasOption("broadChan");
-        this.parInt = line.hasOption("parInt");
+        this.delSync = line.hasOption("delSync");
         this.parSeq = line.hasOption("parSeq");
         this.maskVarClocks = line.hasOption("maskVarClocks");
         this.maskVarChannels = line.hasOption("maskVarChannels");
         this.urgChan = line.hasOption("urgChan");
         this.delOutput = line.hasOption("delOutput");
         this.pcr = line.hasOption("pcr");
+        this.commLoc = line.hasOption("commLoc");
+        this.urgLoc = line.hasOption("urgLoc");
 
         if(line.hasOption("env")){
             this.env = line.getOptionValue("env");
@@ -337,8 +352,8 @@ public class OptionsArgs {
     public boolean isBroadChan() { return broadChan; }
     public void setBroadChan() { this.broadChan = true; }
 
-    public boolean isParInt() { return this.parInt; }
-    public void setParInt() { this.parInt = true; }
+    public boolean isDelSync() { return this.delSync; }
+    public void setDelSync() { this.delSync = true; }
     public boolean isParSeq() {return this.parSeq;}
 
     public boolean checkOption(String optionName) {

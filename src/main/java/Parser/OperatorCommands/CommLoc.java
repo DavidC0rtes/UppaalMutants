@@ -3,20 +3,21 @@ package Parser.OperatorCommands;
 import Parser.Command.Command;
 import Parser.Receiver.Mutator;
 
-public class ComLoc implements Command {
+public class CommLoc implements Command {
     private Mutator mutantOperator;
 
-    public ComLoc(Mutator mutantOperator) {
+    public CommLoc(Mutator mutantOperator) {
         this.mutantOperator = mutantOperator;
     }
 
     @Override
+
     public void execute() {
-        mutantOperator.prepareCommLoc();
+        mutantOperator.prepareLocModifierOp("commLoc");
     }
 
     @Override
     public String getName() {
-        return "comLoc";
+        return "commLoc";
     }
 }

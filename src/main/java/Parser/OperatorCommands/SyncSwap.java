@@ -3,20 +3,21 @@ package Parser.OperatorCommands;
 import Parser.Command.Command;
 import Parser.Receiver.Mutator;
 
-public class ParInt implements Command {
+public class SyncSwap implements Command {
 
     private final Mutator mutantOperator;
 
-    public ParInt(Mutator mutantOperator) {
+    public SyncSwap(Mutator mutantOperator) {
         this.mutantOperator = mutantOperator;
     }
+
     @Override
     public void execute() {
-        this.mutantOperator.prepareParIntOperator();
+        //mutantOperator.prepareReplaceMsg();
     }
 
     @Override
     public String getName() {
-        return "parInt";
+        return "ReplaceMsg";
     }
 }

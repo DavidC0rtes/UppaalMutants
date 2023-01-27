@@ -2,8 +2,11 @@ package Parser.NTAExtension;
 
 import Parser.Antlr.UppaalParser;
 import Parser.Antlr.UppaalParserBaseListener;
+import org.antlr.v4.runtime.RuleContext;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * In order to de-couple the grammar from the application code i built this class
@@ -19,11 +22,16 @@ public class ExtendedListener extends UppaalParserBaseListener {
 
     private HashMap<String, ArrayList<Integer>> chanToInTran = new HashMap<>();
 
+    private HashMap<Integer, ArrayList<String>> transitionSyncSwap = new HashMap<>();
+
+
     public HashMap<String, ArrayList<Integer>> getChanToOutTran() {
         return chanToOutTran;
     }
 
     private HashMap<String, ArrayList<Integer>> chanToOutTran = new HashMap<>();
+    private ArrayList<Integer> locations = new ArrayList<>();
+    private ArrayList<UppaalParser.TransitionContext> syncTransitions = new ArrayList<>();
     private String currentEnv = "Global";
 
     @Override
@@ -64,8 +72,30 @@ public class ExtendedListener extends UppaalParserBaseListener {
     @Override
     public void enterTempContent(UppaalParser.TempContentContext ctx) {
         this.currentEnv = ctx.name().anything().getText();
+        HashMap<String, List<Integer>> tran2Loc = new HashMap();
+
+        // Traverse transitions and add neighbours to a structure.
+        List<UppaalParser.TransitionContext> syncTransitions = ctx.transition();
+
+        for (UppaalParser.TransitionContext tran : syncTransitions) {
+            if ((tran.labelTransSyncInput().size() + tran.labelTransSyncOutput().size()) == 0) {
+                continue;
+            }
+            tran2Loc.merge(
+                    tran.source().getText(),
+                    List.of(new Integer[]{tran.hashCode()}),
+                    (v1, v2) -> Stream.of(v1, v2)
+                            .flatMap(Collection::stream)
+                            .collect(Collectors.toList())
+            );
+        }
     }
 
+
+    private ArrayList<String> extractChannelsFromTransition(UppaalParser.TransitionContext t) {
+        t.labelTransSyncInput().stream().map(RuleContext::getText);
+
+    }
     @Override
     public void enterIdentifierGuard(UppaalParser.IdentifierGuardContext ctx) {
         String key = ctx.IDENTIFIER().getText();
@@ -96,12 +126,28 @@ public class ExtendedListener extends UppaalParserBaseListener {
                 chanToTemplate.get(key).add(currentEnv);
         }
     }
+    @Override
+    public void enterLocation(UppaalParser.LocationContext ctx) {
+        locations.add(ctx.hashCode());
+    }
 
+    @Override
+    public void enterTransition(UppaalParser.TransitionContext ctx) {
+        if (ctx.labelTransSyncInput().size() > 0 || ctx.labelTransSyncOutput().size() > 0) {
+            syncTransitions.add(ctx);
+            transitionSyncSwap.put(ctx.hashCode(), new ArrayList<>());
+        }
+    }
 
     public HashMap<String, ArrayList<String>> getClockToTemplate() {
         return clockToTemplate;
     }
     public HashMap<String, ArrayList<String>> getChanToTemplate() {
         return chanToTemplate;
+    }
+    public ArrayList<Integer> getLocations() { return locations; }
+
+    public ArrayList<UppaalParser.TransitionContext> getSyncTransitions() {
+        return syncTransitions;
     }
 }

@@ -22,20 +22,19 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     private String locationSmi = "";
 
     private HashMap<String, HashSet<ClockType>> clockEnv;
-    private String chanTarget;
+    private ChanType chanTarget;
     private String currentEnv = "Global";
     private int idCxlOperator = 0;
     private int indexCxl = 0;
     private int idCxsOperator = 0;
     private int indexCxs = 0;
     private int indexCcn = 0;
-    private int indexBroadChan;
     private int idCcnOperator = 0;
-    private int idBroadChanOperator;
     private boolean isControllable = false;
     private boolean isClockLeft = false;
     private boolean isClockRight = false;
     private String envTarget, ntaOperator, newClock, varTarget;
+    private int locHashCode;
 
 
     public UppaalVisitor (int tmiOperator, String templateTad, String sourceTad, String targetTad, String outputTad, String locationSmi,
@@ -59,7 +58,6 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         this.idCcnOperator = idCcnOperator;
         this.indexCxl = 0;
         this.indexCxs = 0;
-        this.indexBroadChan = 0;
 
         this.envTarget = envTarget;
     }
@@ -74,7 +72,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
      public UppaalVisitor(
              String envTarget,
              HashMap<String, HashSet<ClockType>> clockEnv,
-             String chanTarget,
+             ChanType chanTarget,
              String varTarget,
              String operator
      )
@@ -94,6 +92,8 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     public void addHashCodeTarget(int code) {
          transHashCode = code;
     }
+
+    public void addLocHashCode(int code) { locHashCode = code; }
     public void addOutHashCode(int code) { outHashCode = code; }
 
 
@@ -345,7 +345,6 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
                     .append(extractChildren(variablesId))
                     .append(";");
         }
-
 
         return varDecl.toString();
     }
@@ -835,15 +834,17 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             location = location.concat(visit(ctx.name())).concat("\n");
         }
 
-
         if (ctx.labelLoc() != null) {
-            location = location.concat(visit(ctx.labelLoc())).concat("\n");
+            for (UppaalParser.LabelLocContext labelLoc : ctx.labelLoc()) {
+                location = location.concat(visit(labelLoc)).concat("\n");
+            }
         }
 
-        if(ctx.URGENT_LOC()!=null){
+        boolean commLocCandidate = ntaOperator.equals("commLoc") && transHashCode == ctx.hashCode();
+        if(ctx.URGENT_LOC()!=null && !commLocCandidate){
             location = location.concat("<urgent/>\n");
         }
-        if(ctx.COMMITTED()!=null){
+        if(ctx.COMMITTED()!=null || commLocCandidate){
             location = location.concat("<committed/>\n");
         }
         location = location.concat("</location>");
@@ -852,15 +853,17 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
     @Override
     public String visitLabelLoc(UppaalParser.LabelLocContext ctx) {
-        String labelLoc = ctx.OPEN_INV().getText();
-        if (ctx.misc() != null) {
-            for (UppaalParser.MiscContext x : ctx.misc()) {
-                labelLoc = labelLoc.concat(x.getText());
-            }
+        String labelLoc = "<label kind=";
+        labelLoc = labelLoc.concat(ctx.STRING().getText());
+
+        if(ctx.coordinate()!=null){
+            labelLoc = labelLoc.concat(visit(ctx.coordinate()));
         }
 
-        labelLoc = labelLoc.concat(visit(ctx.expr()));
-        labelLoc += ctx.CLOSE_LABEL().getText();
+        labelLoc = labelLoc.concat(">");
+
+        labelLoc = labelLoc.concat(visit(ctx.anything()));
+        labelLoc = labelLoc.concat("</label>");
         return labelLoc;
     }
 
@@ -974,16 +977,6 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     }
 
     @Override
-    public String visitLabelUpdate(UppaalParser.LabelUpdateContext ctx) {
-         return ctx.getText();
-    }
-
-    @Override
-    public String visitLabelSelect(UppaalParser.LabelSelectContext ctx) {
-         return ctx.getText();
-    }
-
-    @Override
     public String visitLabelTransGuard(UppaalParser.LabelTransGuardContext ctx) {
         String label = ctx.OPEN_GUARD().getText();
         if(ctx.guardExpr()!=null){
@@ -999,10 +992,11 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         String label = ctx.OPEN_SYNC().getText();
         if(ctx.expr()!=null) {
             String chanName = visit(ctx.expr());
-            if (chanTarget != null && chanTarget.equals(chanName.split("\\[")[0]) && ctx.hashCode() == transHashCode) {
-                if (this.ntaOperator.equals("parInt") || this.ntaOperator.equals("parSeq")) {
+            String chanId = chanName.split("\\[")[0];
+            if (chanTarget != null && chanTarget.getName().equals(chanId) && ctx.hashCode() == transHashCode) {
+                if (ntaOperator.equals("delSync") || ntaOperator.equals("parSeq")) {
                     return "";
-                } else if (this.ntaOperator.equals("pcr")) {
+                } else if (ntaOperator.equals("pcr")) {
                     chanName = varTarget;
                 }
             }
@@ -1016,12 +1010,12 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     public String visitLabelTransSyncOutput(UppaalParser.LabelTransSyncOutputContext ctx) {
         String label = ctx.OPEN_SYNC().getText();
 
-        if(ctx.expr()!=null){
+        if(ctx.expr() != null){
             String chanName = visit(ctx.expr());
-            if (ntaOperator.equals("delOutput")
-                    && chanName.split("\\[")[0].equals(chanTarget)
-                    && ctx.hashCode() == outHashCode
-            ) {
+            String chanId = chanName.split("\\[")[0];
+            if ( chanTarget != null && (chanId.equals(chanTarget.getName()) && ctx.hashCode() == outHashCode)
+                    && ( ntaOperator.equals("delOutput") || ntaOperator.equals("delSync") )
+                    && ( !chanTarget.getPrefix().equals("broadcast"))) {
                 return "";
             }
 

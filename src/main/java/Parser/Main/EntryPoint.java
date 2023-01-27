@@ -128,12 +128,14 @@ public class EntryPoint {
                 new Tmi(mutator),
                 new BroadChan(mutator),
                 new UrgChan(mutator),
-                new ParInt(mutator),
+                new DelSync(mutator),
                 new ParSeq(mutator),
                 new MaskVarClocks(mutator),
                 new MaskVarChannels(mutator),
                 new DelOutput(mutator),
-                new Pcr(mutator)
+                new CommLoc(mutator),
+                new UrgLoc(mutator),
+                new ReplaceMsg(mutator)
         );
 
         if (!addAllResult) {
@@ -210,12 +212,6 @@ public class EntryPoint {
             e.printStackTrace();
         }
 
-        // Create JSON report file
-        try (FileWriter writer = new FileWriter(new File(fileMutants, "report.json"))){
-            writer.write(mutator.getJSONKilledMutants());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         // Create CSV report file
         try (FileWriter writer = new FileWriter(new File(fileMutants, "report.csv"))){
             writer.write(mutator.getCSVKilledMutants());
