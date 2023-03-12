@@ -29,7 +29,7 @@ public class OptionsArgs {
     private String env;
     private Options options;
     private CommandLine line;
-    private boolean pcr, commLoc, urgLoc;
+    private boolean pcr, commLoc, urgLoc, allOpt;
 
     public OptionsArgs(){
         this.options = new Options();
@@ -148,6 +148,12 @@ public class OptionsArgs {
                 "Enables the urgLoc operator. One location becomes urgent."
         );
 
+        Option allOpt = new Option(
+                "all",
+                false,
+                "Enables all operators."
+        );
+
         Option envOpt = Option.builder("env")
                 .hasArg()
                 .desc("Specify the name of the automaton to make the mutants")
@@ -157,7 +163,7 @@ public class OptionsArgs {
                 helpOpt, modelOpt, queryOpt, verifyOpt, pathOpt, logOpt, tmiOpt, tadOpt,
                 tadSyncOpt, tadRandomOpt, smiOpt, smiNoRedundantOpt, cxlOpt, cxsOpt, ccnOpt, broadChanOpt, delSyncOpt,
                 parSeqOpt, maskVarClocks, maskVarChannels, urgChanOpt, delOutputOpt, replaceMsgOpt, commLocOpt, urgLocOpt,
-                envOpt))
+                envOpt, allOpt))
         {
             options.addOption(option);
         }
@@ -201,6 +207,7 @@ public class OptionsArgs {
         this.pcr = line.hasOption("pcr");
         this.commLoc = line.hasOption("commLoc");
         this.urgLoc = line.hasOption("urgLoc");
+        this.allOpt = line.hasOption("all");
 
         if(line.hasOption("env")){
             this.env = line.getOptionValue("env");

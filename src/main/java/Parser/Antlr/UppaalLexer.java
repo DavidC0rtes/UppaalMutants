@@ -1,4 +1,4 @@
-// Generated from /home/david/eclipse-workspace/UppaalMutants/src/main/java/Parser/Antlr/UppaalLexer.g4 by ANTLR 4.10.1
+// Generated from /home/david/Documents/UppaalMutants/src/main/java/Parser/Antlr/UppaalLexer.g4 by ANTLR 4.10.1
 package Parser.Antlr;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;

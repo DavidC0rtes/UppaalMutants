@@ -60,6 +60,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         this.indexCxs = 0;
 
         this.envTarget = envTarget;
+        this.ntaOperator = "none";
     }
 
     /**
@@ -835,9 +836,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         }
 
         if (ctx.labelLoc() != null) {
-            for (UppaalParser.LabelLocContext labelLoc : ctx.labelLoc()) {
-                location = location.concat(visit(labelLoc)).concat("\n");
-            }
+            location = location.concat(visit(ctx.labelLoc())).concat("\n");
         }
 
         boolean commLocCandidate = ntaOperator.equals("commLoc") && transHashCode == ctx.hashCode();
@@ -853,16 +852,17 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
     @Override
     public String visitLabelLoc(UppaalParser.LabelLocContext ctx) {
-        String labelLoc = "<label kind=";
-        labelLoc = labelLoc.concat(ctx.STRING().getText());
+        String labelLoc = ctx.OPEN_INV().getText();
+       // labelLoc = labelLoc.concat(ctx.STRING().getText());
 
-        if(ctx.coordinate()!=null){
-            labelLoc = labelLoc.concat(visit(ctx.coordinate()));
+        if(ctx.misc()!=null){
+            for (UppaalParser.MiscContext misc : ctx.misc())
+            labelLoc = labelLoc.concat(visit(misc));
         }
 
         labelLoc = labelLoc.concat(">");
 
-        labelLoc = labelLoc.concat(visit(ctx.anything()));
+        labelLoc = labelLoc.concat(visit(ctx.expr()));
         labelLoc = labelLoc.concat("</label>");
         return labelLoc;
     }
@@ -966,15 +966,9 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
     @Override
     public String visitLabelTrans(UppaalParser.LabelTransContext ctx) {
-        String label = "<label kind=";
-        label = label.concat(ctx.STRING().getText());
-        if(ctx.coordinate() != null){
-            label = label.concat(visit(ctx.coordinate()));
-        }
-        label = label.concat(">").concat(ctx.anything().getText());
-        label = label.concat("</label>");
-        return label;
+        return ctx.getText();
     }
+
 
     @Override
     public String visitLabelTransGuard(UppaalParser.LabelTransGuardContext ctx) {

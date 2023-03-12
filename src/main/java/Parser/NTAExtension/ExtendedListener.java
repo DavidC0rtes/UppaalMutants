@@ -94,7 +94,7 @@ public class ExtendedListener extends UppaalParserBaseListener {
 
     private ArrayList<String> extractChannelsFromTransition(UppaalParser.TransitionContext t) {
         t.labelTransSyncInput().stream().map(RuleContext::getText);
-
+        return null;
     }
     @Override
     public void enterIdentifierGuard(UppaalParser.IdentifierGuardContext ctx) {

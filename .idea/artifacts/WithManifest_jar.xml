@@ -1,0 +1,21 @@
+<component name="ArtifactManager">
+  <artifact name="WithManifest:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/WithManifest_jar</output-path>
+    <root id="root">
+      <element id="archive" name="MutationUppaal.jar">
+        <element id="module-output" name="MutationUppaal" />
+      </element>
+      <element id="library" level="project" name="Maven: ch.qos.logback:logback-core:1.4.1" />
+      <element id="library" level="project" name="Maven: com.google.code.gson:gson:2.9.1" />
+      <element id="library" level="project" name="Maven: org.antlr:antlr4:4.10.1" />
+      <element id="library" level="project" name="Maven: org.antlr:antlr4-runtime:4.10.1" />
+      <element id="library" level="project" name="Maven: org.antlr:antlr-runtime:3.5.3" />
+      <element id="library" level="project" name="Maven: org.abego.treelayout:org.abego.treelayout.core:1.0.3" />
+      <element id="library" level="project" name="Maven: commons-cli:commons-cli:1.5.0" />
+      <element id="library" level="project" name="Maven: org.slf4j:slf4j-api:2.0.1" />
+      <element id="library" level="project" name="Maven: org.glassfish:javax.json:1.0.4" />
+      <element id="library" level="project" name="Maven: org.antlr:ST4:4.3.3" />
+      <element id="library" level="project" name="Maven: com.ibm.icu:icu4j:69.1" />
+    </root>
+  </artifact>
+</component>

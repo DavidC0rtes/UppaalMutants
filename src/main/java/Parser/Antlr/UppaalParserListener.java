@@ -1,4 +1,4 @@
-// Generated from /home/david/eclipse-workspace/UppaalMutants/src/main/java/Parser/Antlr/UppaalParser.g4 by ANTLR 4.10.1
+// Generated from /home/david/Documents/UppaalMutants/src/main/java/Parser/Antlr/UppaalParser.g4 by ANTLR 4.10.1
 package Parser.Antlr;
 
     import java.util.HashMap;
@@ -1132,6 +1132,26 @@ public interface UppaalParserListener extends ParseTreeListener {
 	 */
 	void exitLabelTrans(UppaalParser.LabelTransContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link UppaalParser#labelUpdate}.
+	 * @param ctx the parse tree
+	 */
+	void enterLabelUpdate(UppaalParser.LabelUpdateContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link UppaalParser#labelUpdate}.
+	 * @param ctx the parse tree
+	 */
+	void exitLabelUpdate(UppaalParser.LabelUpdateContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link UppaalParser#labelSelect}.
+	 * @param ctx the parse tree
+	 */
+	void enterLabelSelect(UppaalParser.LabelSelectContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link UppaalParser#labelSelect}.
+	 * @param ctx the parse tree
+	 */
+	void exitLabelSelect(UppaalParser.LabelSelectContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link UppaalParser#selectList}.
 	 * @param ctx the parse tree
 	 */
@@ -1141,6 +1161,16 @@ public interface UppaalParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitSelectList(UppaalParser.SelectListContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link UppaalParser#labelComments}.
+	 * @param ctx the parse tree
+	 */
+	void enterLabelComments(UppaalParser.LabelCommentsContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link UppaalParser#labelComments}.
+	 * @param ctx the parse tree
+	 */
+	void exitLabelComments(UppaalParser.LabelCommentsContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code SumGuard}
 	 * labeled alternative in {@link UppaalParser#guardExpr}.

@@ -395,7 +395,7 @@ public class Mutator {
      */
 
     public void prepareSyncSwap() {
-        parser.getTransitionsTad()
+        parser.getTransitionsTad();
     }
 
     public void prepareLocModifierOp(String operator) {

@@ -122,9 +122,8 @@ public class EntryPoint {
                 new SmiNoRedundant(mutator),
                 new Tad(mutator),
                 new SmiNoRedundant(mutator),
-                new Tad(mutator),
                 new TadRandomSync(mutator),
-                new TadSync(mutator, opt.getTadSync()),
+                //new TadSync(mutator, opt.getTadSync()),
                 new Tmi(mutator),
                 new BroadChan(mutator),
                 new UrgChan(mutator),
@@ -148,8 +147,10 @@ public class EntryPoint {
                 cxlMutant, cxsMutant, ccnMutant, broadChanMutant, parIntMutant, parSeqMutant);
 */
         Switch mySwitch = new Switch();
+
+        final boolean runAll = opt.checkOption("all");
         commandsArray.forEach((comm) -> {
-            if (opt.checkOption(comm.getName())) {
+            if (opt.checkOption(comm.getName()) || runAll) {
                 mySwitch.runOperator(comm);
             }
         });
