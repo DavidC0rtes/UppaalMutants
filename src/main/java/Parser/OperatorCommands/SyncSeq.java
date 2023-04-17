@@ -3,10 +3,10 @@ package Parser.OperatorCommands;
 import Parser.Command.Command;
 import Parser.Receiver.Mutator;
 
-public class ParSeq implements Command {
+public class SyncSeq implements Command {
     private final Mutator mutantOperator;
 
-    public ParSeq(Mutator mo) {
+    public SyncSeq(Mutator mo) {
         mutantOperator = mo;
     }
     @Override
@@ -16,6 +16,6 @@ public class ParSeq implements Command {
 
     @Override
     public String getName() {
-        return "parSeq";
+        return "syncSeq";
     }
 }

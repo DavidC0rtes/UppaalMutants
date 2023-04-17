@@ -115,7 +115,7 @@ public class EntryPoint {
         Command maskVarClocks = new MaskVarClocks(mutator);*/
 
         boolean addAllResult = Collections.addAll(commandsArray,
-                new Ccn(mutator),
+               /* new Ccn(mutator),
                 new Cxl(mutator),
                 new Cxs(mutator),
                 new Smi(mutator),
@@ -124,11 +124,11 @@ public class EntryPoint {
                 new SmiNoRedundant(mutator),
                 new TadRandomSync(mutator),
                 //new TadSync(mutator, opt.getTadSync()),
-                new Tmi(mutator),
+                new Tmi(mutator),*/
                 new BroadChan(mutator),
                 new UrgChan(mutator),
                 new DelSync(mutator),
-                new ParSeq(mutator),
+                new SyncSeq(mutator),
                 new MaskVarClocks(mutator),
                 new MaskVarChannels(mutator),
                 new DelOutput(mutator),
@@ -214,12 +214,12 @@ public class EntryPoint {
         }
 
         // Create CSV report file
-        try (FileWriter writer = new FileWriter(new File(fileMutants, "report.csv"))){
+       /* try (FileWriter writer = new FileWriter(new File(fileMutants, "report.csv"))){
             writer.write(mutator.getCSVKilledMutants());
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println(output);
+        System.out.println(output);*/
 
     }
 }

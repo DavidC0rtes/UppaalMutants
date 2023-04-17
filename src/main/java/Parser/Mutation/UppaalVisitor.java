@@ -97,7 +97,6 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     public void addLocHashCode(int code) { locHashCode = code; }
     public void addOutHashCode(int code) { outHashCode = code; }
 
-
     private void setNewClock() {
          newClock = String.format("dummy%d", System.currentTimeMillis() / 1000L);
     }

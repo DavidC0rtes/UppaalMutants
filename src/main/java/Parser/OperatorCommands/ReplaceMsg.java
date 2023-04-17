@@ -18,6 +18,6 @@ public class ReplaceMsg implements Command {
 
     @Override
     public String getName() {
-        return "ReplaceMsg";
+        return "replaceMsg";
     }
 }

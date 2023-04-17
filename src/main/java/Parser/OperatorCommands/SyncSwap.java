@@ -18,6 +18,6 @@ public class SyncSwap implements Command {
 
     @Override
     public String getName() {
-        return "ReplaceMsg";
+        return "syncSwap";
     }
 }

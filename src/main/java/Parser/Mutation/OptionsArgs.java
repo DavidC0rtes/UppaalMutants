@@ -199,7 +199,7 @@ public class OptionsArgs {
         this.ccn = line.hasOption("ccn");
         this.broadChan = line.hasOption("broadChan");
         this.delSync = line.hasOption("delSync");
-        this.parSeq = line.hasOption("parSeq");
+        this.parSeq = line.hasOption("syncSeq");
         this.maskVarClocks = line.hasOption("maskVarClocks");
         this.maskVarChannels = line.hasOption("maskVarChannels");
         this.urgChan = line.hasOption("urgChan");
