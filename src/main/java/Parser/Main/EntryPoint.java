@@ -115,7 +115,7 @@ public class EntryPoint {
         Command maskVarClocks = new MaskVarClocks(mutator);*/
 
         boolean addAllResult = Collections.addAll(commandsArray,
-               /* new Ccn(mutator),
+/*                new Ccn(mutator),
                 new Cxl(mutator),
                 new Cxs(mutator),
                 new Smi(mutator),
@@ -124,7 +124,7 @@ public class EntryPoint {
                 new SmiNoRedundant(mutator),
                 new TadRandomSync(mutator),
                 //new TadSync(mutator, opt.getTadSync()),
-                new Tmi(mutator),*/
+                new Tmi(mutator)*/
                 new BroadChan(mutator),
                 new UrgChan(mutator),
                 new DelSync(mutator),

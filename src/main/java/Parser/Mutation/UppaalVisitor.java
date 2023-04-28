@@ -138,6 +138,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     @Override
     public String visitDeclaration(UppaalParser.DeclarationContext ctx) {
         String declaration = ctx.OPEN_DECLARATION().getText();
+        if (!declaration.contains(">")) declaration += ">\n";
         declaration = declaration.concat(visit(ctx.declContent()));
         if (this.ntaOperator.equals("parSeq") && ctx.depth() == 3) {
             String newclockDeclr = String.format("clock %s;\n", this.newClock);
@@ -158,8 +159,13 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             }
             declaration = declaration.concat(maskedVar);
         }
-        //.println(declaration);
-        declaration = declaration.concat(ctx.CLOSE_DECLARATION().getText());
+
+        declaration = declaration.concat(
+                ctx.CLOSE_DECLARATION()!= null
+                ?   ctx.CLOSE_DECLARATION().getText()
+                :   "</declaration>"
+        );
+
         return declaration;
     }
 
@@ -859,7 +865,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             labelLoc = labelLoc.concat(visit(misc));
         }
 
-        labelLoc = labelLoc.concat(">");
+        //labelLoc = labelLoc.concat(">");
 
         labelLoc = labelLoc.concat(visit(ctx.expr()));
         labelLoc = labelLoc.concat("</label>");

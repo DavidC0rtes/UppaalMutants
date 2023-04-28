@@ -142,7 +142,7 @@ content     :   chardata?
                 ((element | reference | CDATA | PI | COMMENT) chardata?)* ;
 
 element     :   '<' Name attribute* '>' content '</' Name '>'
-            |   '<' Name attribute* '/>'
+            |   '<' Name attribute* SLASH_CLOSE
             ;
 
 reference   :   EntityRef | CharRef ;
@@ -165,7 +165,7 @@ nta         :   '<' 'nta' '>' misc*
 
 //declaration :   '<' 'declaration' '>' anything '</' 'declaration' '>' ;
 
-declaration :   OPEN_DECLARATION declContent CLOSE_DECLARATION;
+declaration :   OPEN_DECLARATION declContent (CLOSE_DECLARATION|CLOSE_EMPTY_LABEL);
 
 declContent:   declarations* ;
 
@@ -401,16 +401,16 @@ parameter   :   OPEN_PARAMETER funcParameters CLOSE_PARAMETER ;
 
 coordinate  :   ('x'|'y') EQUALS STRING ('x'|'y') EQUALS STRING ;
 
-initLoc    :   '<' 'init' 'ref' EQUALS STRING '/>' ;
+initLoc    :   '<' 'init' 'ref' EQUALS STRING SLASH_CLOSE ;
 
 branchpoint :   '<' 'branchpoint' 'id' EQUALS STRING
                     coordinate? '>' misc*
                     '</' 'branchpoint' '>';
 
 location    :   '<' 'location'
-                    'id' EQUALS STRING coordinate?  color? '>' misc* (name misc*)?
+                    ((('id' EQUALS STRING) coordinate?)|(coordinate? ('id' EQUALS STRING)))  color? '>' misc* (name misc*)?
                     (labelLoc misc*)?
-                    ('<' (URGENT_LOC | 'committed') '/>' misc*)?
+                    ('<' (URGENT_LOC | 'committed') SLASH_CLOSE misc*)?
 
                     '</' 'location' '>' ;
 name        :   '<' 'name'
@@ -463,8 +463,8 @@ transition  :   '<' 'transition' color? '>'
                 }
                 ;
 
-labelTransGuard: OPEN_GUARD guardExpr? CLOSE_LABEL ;
-labelTransSyncInput : (OPEN_SYNC (expr '?')? CLOSE_LABEL)
+labelTransGuard: OPEN_GUARD guardExpr? (CLOSE_LABEL|CLOSE_EMPTY_LABEL) ;
+labelTransSyncInput : (OPEN_SYNC (expr '?')? (CLOSE_LABEL|CLOSE_EMPTY_LABEL))
                      {
                          //flag to know if a transition is controllable (<expr> '?')
                          this.isControllable = true;
@@ -485,22 +485,22 @@ labelTransSyncInput : (OPEN_SYNC (expr '?')? CLOSE_LABEL)
                             this.locationsSmi.get(this.currentEnv).add(this.currentTarget);
                          }
                      } ;
-labelTransSyncOutput: (OPEN_SYNC (expr '!')? CLOSE_LABEL)
+labelTransSyncOutput: (OPEN_SYNC (expr '!')? (CLOSE_LABEL|CLOSE_EMPTY_LABEL))
                     {
                         //If has a synchro input remove from possible transition to make an output on tad mutants
                         //due to a transition can not has two synchro labels
                         this.transitionsTad.get(currentEnv).get(currentSource).remove(currentTarget);
                     } ;
 labelTrans: (labelSelect misc* | labelUpdate misc* | labelComments misc* ) ;
-labelUpdate :	OPEN_LBLTR misc* expr (',' expr)* CLOSE_LABEL ;
+labelUpdate :	OPEN_LBLTR misc* (expr (',' expr)*)? (CLOSE_LABEL|CLOSE_EMPTY_LABEL) ;
 
-labelSelect :   OPEN_SELECT misc* selectList CLOSE_LABEL ;
+labelSelect :   OPEN_SELECT misc* selectList? (CLOSE_LABEL|CLOSE_EMPTY_LABEL) ;
 
 selectList  :   IDENTIFIER ':' type
             |   selectList ',' IDENTIFIER ':' type
             ;
 
-labelComments : OPEN_LBLCOM  anything CLOSE_LABEL ;
+labelComments : OPEN_LBLCOM  anything (CLOSE_LABEL|CLOSE_EMPTY_LABEL) ;
 guardExpr
 //locals[boolean isClockId = false, boolean isClockIdAux= false]
             :   IDENTIFIER
@@ -590,13 +590,13 @@ guardTypeId
             |   'scalar' '[' guardExpr ']'                 # GuardTypeScalar
             ;
 
-source      :   ('<' 'source' 'ref' EQUALS STRING '/>')
+source      :   ('<' 'source' 'ref' EQUALS STRING SLASH_CLOSE)
                 {
                     this.currentSource = $ctx.STRING().getText();
                 }
                 ;
 
-target      :   '<' 'target' 'ref' EQUALS STRING '/>'
+target      :   '<' 'target' 'ref' EQUALS STRING SLASH_CLOSE
                 {
                     this.currentTarget = $ctx.STRING().getText();
                     this.transitionsTadNoSync.get(currentEnv).get(currentSource).remove(currentTarget);
@@ -604,7 +604,7 @@ target      :   '<' 'target' 'ref' EQUALS STRING '/>'
                 }
                 ;
 
-nail        :   '<' 'nail' coordinate? '/>' ;
+nail        :   '<' 'nail' coordinate? SLASH_CLOSE ;
 
 system      :   '<' 'system' '>' anything '</' 'system' '>' ;
 
