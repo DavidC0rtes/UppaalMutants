@@ -1,0 +1,12 @@
+Operator,Generated mutants,Killed mutants
+tadNoRedundant,0,0
+broadChan,4,0
+delSync,9,9
+parSeq,9,9
+maskVarClocks,2,0
+maskVarChannels,12,0
+urgChan,3,0
+delOutput,7,0
+commLoc,21,1
+urgLoc,21,1
+ReplaceMsg,0,1

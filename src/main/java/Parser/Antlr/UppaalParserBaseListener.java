@@ -406,6 +406,18 @@ public class UppaalParserBaseListener implements UppaalParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterSciExpr(UppaalParser.SciExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitSciExpr(UppaalParser.SciExprContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterStopWatchExpr(UppaalParser.StopWatchExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1265,6 +1277,30 @@ public class UppaalParserBaseListener implements UppaalParserListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitSelectList(UppaalParser.SelectListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLabelExpRate(UppaalParser.LabelExpRateContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLabelExpRate(UppaalParser.LabelExpRateContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterLabelProb(UppaalParser.LabelProbContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitLabelProb(UppaalParser.LabelProbContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

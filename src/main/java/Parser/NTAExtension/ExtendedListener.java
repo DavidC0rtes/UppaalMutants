@@ -2,6 +2,9 @@ package Parser.NTAExtension;
 
 import Parser.Antlr.UppaalParser;
 import Parser.Antlr.UppaalParserBaseListener;
+import Parser.Graph.Graph;
+import de.tudarmstadt.es.juppaal.Automaton;
+import de.tudarmstadt.es.juppaal.NTA;
 import org.antlr.v4.runtime.RuleContext;
 
 import java.util.*;
@@ -9,7 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * In order to de-couple the grammar from the application code i built this class
+ * In order to de-couple the grammar from the application code I built this class
  * to collect some useful information at parse time.
  */
 public class ExtendedListener extends UppaalParserBaseListener {
@@ -20,18 +23,19 @@ public class ExtendedListener extends UppaalParserBaseListener {
         return chanToInTran;
     }
 
-    private HashMap<String, ArrayList<Integer>> chanToInTran = new HashMap<>();
+    private final HashMap<String, ArrayList<Integer>> chanToInTran = new HashMap<>();
 
-    private HashMap<Integer, ArrayList<String>> transitionSyncSwap = new HashMap<>();
-
+    private final HashMap<Integer, ArrayList<String>> transitionSyncSwap = new HashMap<>();
+    private HashMap<String, HashMap<String, HashSet<String>>> tadNoRedundantMap;
 
     public HashMap<String, ArrayList<Integer>> getChanToOutTran() {
         return chanToOutTran;
     }
 
-    private HashMap<String, ArrayList<Integer>> chanToOutTran = new HashMap<>();
-    private ArrayList<Integer> locations = new ArrayList<>();
-    private ArrayList<UppaalParser.TransitionContext> syncTransitions = new ArrayList<>();
+    private final HashMap<String, ArrayList<Integer>> chanToOutTran = new HashMap<>();
+    private final ArrayList<Integer> locations = new ArrayList<>();
+    private final ArrayList<UppaalParser.TransitionContext> syncTransitions = new ArrayList<>();
+
     private String currentEnv = "Global";
 
     @Override

@@ -6,8 +6,10 @@ import Parser.Graph.Graph;
 import Parser.Mutation.ChanType;
 import Parser.Mutation.UppaalVisitor;
 import Parser.NTAExtension.ExtendedListener;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import de.tudarmstadt.es.juppaal.Automaton;
+import de.tudarmstadt.es.juppaal.Location;
+import de.tudarmstadt.es.juppaal.NTA;
+import de.tudarmstadt.es.juppaal.Transition;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -19,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 /**
  * Class <code>Mutator</code> defines the "engine" responsible
@@ -50,16 +51,16 @@ public class Mutator {
     private final ArrayList<Thread> threadsCommLoc = new ArrayList<>();
     private final ArrayList<Thread> threadsUrgLoc = new ArrayList<>();
     private final ArrayList<Thread> threadsReplaceMsg = new ArrayList<>();
+    private final ArrayList<Thread> threadsTadNoRedundant = new ArrayList<>();
     private UppaalParser parser;
     private ParseTree tree;
     private ExtendedListener listener;
-
     private ArrayList arrayData = new ArrayList();
+    private final NTA nta;
     private static final Logger logger = LoggerFactory.getLogger(Mutator.class);
     public Mutator(String modelFile, File fileMutants, String envTarget) throws IOException {
 
         this.fileMutants = fileMutants;
-
         this.threadsTmi = new ArrayList<>();
         this.threadsTad = new ArrayList<>();
         this.threadsTadSync = new ArrayList<>();
@@ -84,6 +85,7 @@ public class Mutator {
         // Create listener then feed to walker
         listener = new ExtendedListener();
         walker.walk(listener, tree);
+        this.nta = new NTA(modelFile);
     }
 
     public String infoMutants(){
@@ -92,6 +94,7 @@ public class Mutator {
         info = info.concat("tad ").concat(Integer.toString(this.threadsTad.size())).concat("\n");
         info = info.concat("tadSync ").concat(Integer.toString(this.threadsTadSync.size())).concat("\n");
         info = info.concat("tadRandomSync ").concat(Integer.toString(this.threadsTadRandomSync.size())).concat("\n");
+        info = info.concat("tadNoRedundant ").concat(Integer.toString(this.threadsTadNoRedundant.size())).concat("\n");
         info = info.concat("smi ").concat(Integer.toString(this.threadsSmi.size())).concat("\n");
         info = info.concat("smiNoRedundant ").concat(Integer.toString(this.threadsSmiNoRedundant.size())).concat("\n");
         info = info.concat("cxl ").concat(Integer.toString(this.threadsCxl.size())).concat("\n");
@@ -112,6 +115,7 @@ public class Mutator {
                         +this.threadsTad.size()
                         +this.threadsTadSync.size()
                         +this.threadsTadRandomSync.size()
+                        +this.threadsTadNoRedundant.size()
                         +this.threadsSmi.size()
                         +this.threadsSmiNoRedundant.size()
                         +this.threadsCxl.size()
@@ -143,6 +147,8 @@ public class Mutator {
         int killedTad = killedMutants(this.threadsTad, pathIn, pathVerifyTa, pathQuery);
         int killedTadSync = killedMutants(this.threadsTadSync, pathIn, pathVerifyTa, pathQuery);
         int killedTadRandomSync = killedMutants(this.threadsTadRandomSync, pathIn, pathVerifyTa, pathQuery);
+        int killedTadNoRedundant = killedMutants(this.threadsTadNoRedundant, pathIn, pathVerifyTa, pathQuery);
+        addKilledData("tadNoRedundant", this.threadsTadNoRedundant.size(), killedTadNoRedundant);
         int killedSmi = killedMutants(this.threadsSmi, pathIn, pathVerifyTa, pathQuery);
         int killedSmiNoRedundant = killedMutants(this.threadsSmiNoRedundant, pathIn, pathVerifyTa, pathQuery);
         int killedCxl = killedMutants(this.threadsCxl, pathIn, pathVerifyTa, pathQuery);
@@ -185,6 +191,8 @@ public class Mutator {
         log = log.concat(Integer.toString(killedTadSync));
         log = log.concat("\ntadRandomSync killed ");
         log = log.concat(Integer.toString(killedTadRandomSync));
+        log = log.concat("\ntadNoRedundant killed ");
+        log = log.concat(Integer.toString(killedTadNoRedundant));
         log = log.concat("\nSmi killed ");
         log = log.concat(Integer.toString(killedSmi));
         log = log.concat("\nSmiNoRedundant killed ");
@@ -218,12 +226,13 @@ public class Mutator {
         log = log.concat("\nScore ").concat(Integer.toString(
                 killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+
                         killedBroadChan + killedDelSync + killedParSeq + killedMaskVarClocks + killedMaskVarChannels
-                        + killedUrgChan + killedDelOutput  + killedCommLoc + killedUrgLoc + killedReplaceMsg
+                        + killedUrgChan + killedDelOutput  + killedCommLoc + killedUrgLoc + killedReplaceMsg + killedTadNoRedundant
         )).concat("/").concat(Integer.toString(
                 this.threadsTmi.size()
                         +this.threadsTad.size()
                         +this.threadsTadSync.size()
                         +this.threadsTadRandomSync.size()
+                        +this.threadsTadNoRedundant.size()
                         +this.threadsSmi.size()
                         +this.threadsSmiNoRedundant.size()
                         +this.threadsCxl.size()
@@ -258,25 +267,42 @@ public class Mutator {
         int dead = 0;
         for(String mutantTmi: operatorThreads.stream().map(Thread::getName).toArray(String[]::new)){
             mutantPath = pathIn + File.separator + mutantTmi;
-            Process p = Runtime.getRuntime().exec(pathVerifyTa.concat(" -q ").concat(mutantPath).concat(" ").concat(pathQuery));
+            String command = pathVerifyTa.concat(" -q ").concat(mutantPath);
+
+            if (!pathQuery.isEmpty()) command += " ".concat(pathQuery);
+
+            //Process p = Runtime.getRuntime().exec(command);
+            ProcessBuilder verifypb = new ProcessBuilder();
+            verifypb.command(command.split(" "));
+
+            Process p = verifypb.start();
+
             if (!p.waitFor(40, TimeUnit.SECONDS)) {
                 logger.info(String.format("Process %s timed out", p.info().toString()));
                 continue;
             }
-            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String line = reader.readLine();
+            String line = new String(p.getInputStream().readAllBytes());
 
-            if(line == null ){
+          /*
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line = reader.readLine();*/
+
+            if(line == null || line.isEmpty() ){
+                System.err.println(new String(p.getErrorStream().readAllBytes()));
                 dead++;
                 continue;
             }
+            if (line.contains("NOT satisfied") || line.contains("MAY be satisfied")) {
+                dead++;
+                break;
+            }
 
-            while ((line = reader.readLine())!=null){
+            /*while ((line = reader.readLine())!=null){
                 if (line.contains("NOT satisfied") || line.contains("MAY be satisfied")) {
                     dead++;
                     break;
                 }
-            }
+            }*/
             System.out.println("Mutant "+ mutantPath + " result: " +line);
         }
         return dead;
@@ -290,6 +316,7 @@ public class Mutator {
         this.runThreads(this.threadsTad);
         this.runThreads(this.threadsTadSync);
         this.runThreads(this.threadsTadRandomSync);
+        this.runThreads(this.threadsTadNoRedundant);
         this.runThreads(this.threadsSmi);
         this.runThreads(this.threadsSmiNoRedundant);
         this.runThreads(this.threadsCxl);
@@ -322,6 +349,7 @@ public class Mutator {
         this.joinThreads(this.threadsTad);
         this.joinThreads(this.threadsTadSync);
         this.joinThreads(this.threadsTadRandomSync);
+        this.joinThreads(this.threadsTadNoRedundant);
         this.joinThreads(this.threadsSmi);
         this.joinThreads(this.threadsSmiNoRedundant);
         this.joinThreads(this.threadsCxl);
@@ -693,8 +721,8 @@ public class Mutator {
 
     }
 
-    public void prepareTadSyncOperator(String chanSync){
-        if(this.envTarget.equals("")){
+    public void prepareTadSyncOperator(String chanSync) {
+        if(this.envTarget.equals("")) {
             //Each template
             for (String template : parser.getTransitionsTad().keySet()) {
                 //Each source
@@ -760,7 +788,6 @@ public class Mutator {
             }
 
         }
-
     }
 
     public void prepareTadRandomSyncOperator(){
@@ -988,6 +1015,76 @@ public class Mutator {
         }
     }
 
+    public void prepareTadNoRedundantOperator() {
+        //Each template
+        for (String template : parser.getTransitionsTad().keySet()) {
+            //Each source
+            Automaton automaton = nta.getAutomaton(template);
+            for (int i = 1; i < automaton.getLocations().size(); i++) {
+                for (int j = 0; j < automaton.getLocations().size(); j++) {
+
+                    Location source = automaton.getLocations().get(i);
+                    Location target = automaton.getLocations().get(j);
+
+                    if (!areConnected(source, target) && target.getOutgoingTransitions().size() > 1) {
+                        String channel = pickRandomElement(listener.getChanToInTran().keySet());
+                        this.threadsTadNoRedundant.add(new Thread(() -> {
+                            UppaalVisitor eval = new UppaalVisitor(-1, template, '"' + source.getUniqueIdString() + '"', '"' + target.getUniqueIdString() + '"', channel + "!", "", parser.getClockEnv(), -1, -1, -1, this.envTarget);
+                            try (FileWriter myWriter = new FileWriter(new File(this.fileMutants, "tadNoRedundant".concat(source.getUniqueIdString().concat(target.getUniqueIdString()).replace("\"", "")).concat("_" + template +  ".xml")))) {
+                                myWriter.write(eval.visit(tree));
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }, "tadNoRedundant" + source.getUniqueIdString() + target.getUniqueIdString() + "_" + template +  ".xml"));
+                    }
+                }
+            }
+        }
+    }
+
+    private String BFS(Automaton automaton, String targetLocation) {
+        StringBuilder trace = new StringBuilder();
+
+        Location init = automaton.getInit();
+        Queue<Location> queue = new LinkedList<>();
+        boolean[] visited = new boolean[automaton.getLocations().size()*2];
+
+        queue.add(init);
+        // GUARDAR PADRE (LOCACION) Y FUNCION PARA RECONSTRUIR EL CAMINO
+        visited[init.getId()] = true;
+        String sep = "";
+        while (!queue.isEmpty()) {
+            Location loc = queue.poll();
+            visited[loc.getId()] = true;
+            System.out.printf("polled location %s\n", loc);
+
+            for (Transition transition : loc.getOutgoingTransitions()) {
+
+                if (!visited[transition.getTarget().getId()]) {
+                    trace.append(sep);
+                    trace.append(transition.getSync() != null ? transition.getSync().toString() : "τ");
+                    if (transition.getTarget().getUniqueIdString().equals(targetLocation.replaceAll("\"", ""))) {
+                        return trace.toString();
+                    }
+
+                    //visited[transition.getTarget().getId()] = true;
+
+                    queue.add(transition.getTarget());
+                }
+
+                sep=".";
+            }
+        }
+        return "";
+
+    }
+
+    private boolean areConnected(Location source, Location target) {
+        return source.getAutomaton().getTransitions(source, target).size() > 0;
+    }
+
+
+
     public String getCSVKilledMutants() {
         StringBuilder csv = new StringBuilder("");
         for (int i = 2; i < arrayData.size(); i+=3) {
@@ -999,6 +1096,12 @@ public class Mutator {
             csv.append("\n");
         }
         return csv.toString();
+    }
+
+    private static <T> T pickRandomElement(Collection<T> collection) {
+        int idx = (int) (Math.random() * collection.size());
+        for (T t : collection) if (--idx < 0) return t;
+        throw new AssertionError();
     }
 }
 

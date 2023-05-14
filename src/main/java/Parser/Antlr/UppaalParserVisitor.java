@@ -230,6 +230,13 @@ public interface UppaalParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitArrayExpr(UppaalParser.ArrayExprContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code SciExpr}
+	 * labeled alternative in {@link UppaalParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitSciExpr(UppaalParser.SciExprContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code StopWatchExpr}
 	 * labeled alternative in {@link UppaalParser#expr}.
 	 * @param ctx the parse tree
@@ -694,6 +701,18 @@ public interface UppaalParserVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitSelectList(UppaalParser.SelectListContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link UppaalParser#labelExpRate}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLabelExpRate(UppaalParser.LabelExpRateContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link UppaalParser#labelProb}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitLabelProb(UppaalParser.LabelProbContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link UppaalParser#labelComments}.
 	 * @param ctx the parse tree

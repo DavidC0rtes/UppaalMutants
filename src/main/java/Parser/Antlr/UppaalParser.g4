@@ -175,8 +175,9 @@ declarations:   variableDecl    # VariableDeclaration
             |   chanPriority    # ChanDeclaration
             ;
 
-expr        :   IDENTIFIER  # IdentifierExpr
-            |   NAT         # NatExpr
+expr        :   NAT         # NatExpr
+            |   IDENTIFIER  # IdentifierExpr
+            |   SCI         # SciExpr
             |   POINT       # DoubleExpr
             |   expr '[' expr ']'   # ArrayExpr
             |   expr '\''     # StopWatchExpr
@@ -418,7 +419,9 @@ name        :   '<' 'name'
                     '>' anything '</' 'name' '>' ;
 
 color       :   'color' EQUALS STRING;
-labelLoc    :  OPEN_INV misc* expr CLOSE_LABEL ;
+labelLoc    :   OPEN_INV misc* expr CLOSE_LABEL
+            |   OPEN_EXPRATE misc* expr CLOSE_LABEL
+            ;
 
 transition  :   '<' 'transition' color? '>'
                 {
@@ -491,7 +494,7 @@ labelTransSyncOutput: (OPEN_SYNC (expr '!')? (CLOSE_LABEL|CLOSE_EMPTY_LABEL))
                         //due to a transition can not has two synchro labels
                         this.transitionsTad.get(currentEnv).get(currentSource).remove(currentTarget);
                     } ;
-labelTrans: (labelSelect misc* | labelUpdate misc* | labelComments misc* ) ;
+labelTrans: (labelSelect misc* | labelUpdate misc* | labelExpRate misc* | labelProb misc* | labelComments misc*) ;
 labelUpdate :	OPEN_LBLTR misc* (expr (',' expr)*)? (CLOSE_LABEL|CLOSE_EMPTY_LABEL) ;
 
 labelSelect :   OPEN_SELECT misc* selectList? (CLOSE_LABEL|CLOSE_EMPTY_LABEL) ;
@@ -500,7 +503,9 @@ selectList  :   IDENTIFIER ':' type
             |   selectList ',' IDENTIFIER ':' type
             ;
 
-labelComments : OPEN_LBLCOM  anything (CLOSE_LABEL|CLOSE_EMPTY_LABEL) ;
+labelExpRate  : OPEN_EXPRATE expr (CLOSE_LABEL|CLOSE_EMPTY_LABEL) ;
+labelProb     : OPEN_PROB expr (CLOSE_LABEL|CLOSE_EMPTY_LABEL) ;
+labelComments : OPEN_LBLCOM  anything '</' 'label' '>';
 guardExpr
 //locals[boolean isClockId = false, boolean isClockIdAux= false]
             :   IDENTIFIER

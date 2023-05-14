@@ -20,9 +20,12 @@ OPEN_SYNC  :   '<' [ \t\r\n]*'label' ( (LBLKIND '"synchronisation"' LBLCOORD) | 
 
 OPEN_LBLTR      :   '<' [ \t\r\n]*'label' ((LBLKIND ASSIGNMENT LBLCOORD) | (LBLCOORD LBLKIND ASSIGNMENT))[ \t\r\n]* '>'? -> pushMode(EXPRESSIONS) ;
 OPEN_SELECT     :   '<' [ \t\r\n]*'label' ((LBLKIND SELECT LBLCOORD) | (LBLCOORD LBLKIND SELECT) ) [ \t\r\n]* '>'?     -> pushMode(EXPRESSIONS) ;
-OPEN_INV        :   '<' [ \t\r\n]*'label' ((LBLKIND (INVARIANT|EXPRATE) LBLCOORD) | (LBLCOORD LBLKIND (INVARIANT|EXPRATE)) ) [ \t\r\n]* '>'?  -> pushMode(EXPRESSIONS) ;
+OPEN_LBLCOM     :   '<' [ \t\r\n]*'label' ((LBLKIND COMMENTS LBLCOORD)|(LBLCOORD COMMENTS QUERY_COMMENT)) [ \t\r\n]* '>'? ;
+OPEN_PROB       :   '<' [ \t\r\n]*'label' ((LBLKIND PROBABILITY  LBLCOORD) | (LBLCOORD LBLKIND PROBABILITY) ) [ \t\r\n]* '>'?  -> pushMode(EXPRESSIONS) ;
+OPEN_EXPRATE    :  '<' [ \t\r\n]*'label' ((LBLKIND EXPRATE LBLCOORD) | (LBLCOORD LBLKIND EXPRATE) ) [ \t\r\n]* '>'?  -> pushMode(EXPRESSIONS) ;
 
-OPEN_LBLCOM     :   '<' [ \t\r\n]*'label' ((LBLKIND QUERY_COMMENT LBLCOORD)|(LBLCOORD LBLKIND QUERY_COMMENT)) [ \t\r\n]* '>'? -> pushMode(EXPRESSIONS) ;
+OPEN_INV        :   '<' [ \t\r\n]*'label' ((LBLKIND (INVARIANT) LBLCOORD) | (LBLCOORD LBLKIND (INVARIANT)) ) [ \t\r\n]* '>'?  -> pushMode(EXPRESSIONS) ;
+
 
 OPEN_DECLARATION    :   '<' [ \t\r\n]* 'declaration' [ \t\r\n]* '>'?
                                         -> pushMode(EXPRESSIONS);
@@ -88,6 +91,8 @@ ASSIGNMENT             :       '"assignment"' ;
 SELECT                 :       '"select"' ;
 INVARIANT              :       '"invariant"' ;
 EXPRATE                :        '"exponentialrate"';
+PROBABILITY             :       '"probability"';
+COMMENTS                :       '"comments"';
 
 //GUARD       :   '"guard"' ;
 
@@ -158,6 +163,7 @@ GUARD_S             :   [ \t\r\n]               -> skip ;
 NAT                 :   [0-9]+ ;
 
 POINT               :   ([0-9]+) '.' [0-9]+ ;
+SCI                 :   [0-9]+ '.'[0-9]+'e'('-'|'+')[0-9]+ ;
 
 //functions
 

@@ -376,6 +376,18 @@ public interface UppaalParserListener extends ParseTreeListener {
 	 */
 	void exitArrayExpr(UppaalParser.ArrayExprContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code SciExpr}
+	 * labeled alternative in {@link UppaalParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterSciExpr(UppaalParser.SciExprContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code SciExpr}
+	 * labeled alternative in {@link UppaalParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitSciExpr(UppaalParser.SciExprContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code StopWatchExpr}
 	 * labeled alternative in {@link UppaalParser#expr}.
 	 * @param ctx the parse tree
@@ -1161,6 +1173,26 @@ public interface UppaalParserListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitSelectList(UppaalParser.SelectListContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link UppaalParser#labelExpRate}.
+	 * @param ctx the parse tree
+	 */
+	void enterLabelExpRate(UppaalParser.LabelExpRateContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link UppaalParser#labelExpRate}.
+	 * @param ctx the parse tree
+	 */
+	void exitLabelExpRate(UppaalParser.LabelExpRateContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link UppaalParser#labelProb}.
+	 * @param ctx the parse tree
+	 */
+	void enterLabelProb(UppaalParser.LabelProbContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link UppaalParser#labelProb}.
+	 * @param ctx the parse tree
+	 */
+	void exitLabelProb(UppaalParser.LabelProbContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link UppaalParser#labelComments}.
 	 * @param ctx the parse tree
