@@ -56,7 +56,7 @@ public class Mutator {
     private ParseTree tree;
     private ExtendedListener listener;
     private ArrayList arrayData = new ArrayList();
-    private final NTA nta;
+    private NTA nta;
     private static final Logger logger = LoggerFactory.getLogger(Mutator.class);
     public Mutator(String modelFile, File fileMutants, String envTarget) throws IOException {
 
@@ -85,7 +85,6 @@ public class Mutator {
         // Create listener then feed to walker
         listener = new ExtendedListener();
         walker.walk(listener, tree);
-        this.nta = new NTA(modelFile);
     }
 
     public String infoMutants(){
@@ -288,7 +287,7 @@ public class Mutator {
             String line = reader.readLine();*/
 
             if(line == null || line.isEmpty() ){
-                System.err.println(new String(p.getErrorStream().readAllBytes()));
+                System.err.println("got error from verifier: " + new String(p.getErrorStream().readAllBytes()));
                 dead++;
                 continue;
             }
@@ -1016,6 +1015,7 @@ public class Mutator {
     }
 
     public void prepareTadNoRedundantOperator() {
+        this.nta = new NTA();
         //Each template
         for (String template : parser.getTransitionsTad().keySet()) {
             //Each source

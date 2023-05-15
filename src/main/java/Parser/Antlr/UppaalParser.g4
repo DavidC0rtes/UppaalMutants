@@ -243,7 +243,8 @@ variableDecl:   (type variableID (',' variableID)* ';')
 
 type        :   prefix? typeId ;
 
-prefix      :   URGENT      # UrgentPrefix
+prefix      :   URGENT 'broadcast' #UrgentAndBroadcastPrefix
+            |   URGENT      # UrgentPrefix
             |   'broadcast' # BroadcastPrefix
             |   'meta'      # MetaPrefix
             |   'const'     # ConstPrefix

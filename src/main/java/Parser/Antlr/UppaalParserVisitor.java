@@ -290,6 +290,13 @@ public interface UppaalParserVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitType(UppaalParser.TypeContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code UrgentAndBroadcastPrefix}
+	 * labeled alternative in {@link UppaalParser#prefix}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitUrgentAndBroadcastPrefix(UppaalParser.UrgentAndBroadcastPrefixContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code UrgentPrefix}
 	 * labeled alternative in {@link UppaalParser#prefix}.
 	 * @param ctx the parse tree

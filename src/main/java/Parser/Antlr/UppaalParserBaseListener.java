@@ -514,6 +514,18 @@ public class UppaalParserBaseListener implements UppaalParserListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterUrgentAndBroadcastPrefix(UppaalParser.UrgentAndBroadcastPrefixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitUrgentAndBroadcastPrefix(UppaalParser.UrgentAndBroadcastPrefixContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterUrgentPrefix(UppaalParser.UrgentPrefixContext ctx) { }
 	/**
 	 * {@inheritDoc}

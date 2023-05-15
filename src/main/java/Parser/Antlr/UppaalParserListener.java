@@ -478,6 +478,18 @@ public interface UppaalParserListener extends ParseTreeListener {
 	 */
 	void exitType(UppaalParser.TypeContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code UrgentAndBroadcastPrefix}
+	 * labeled alternative in {@link UppaalParser#prefix}.
+	 * @param ctx the parse tree
+	 */
+	void enterUrgentAndBroadcastPrefix(UppaalParser.UrgentAndBroadcastPrefixContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code UrgentAndBroadcastPrefix}
+	 * labeled alternative in {@link UppaalParser#prefix}.
+	 * @param ctx the parse tree
+	 */
+	void exitUrgentAndBroadcastPrefix(UppaalParser.UrgentAndBroadcastPrefixContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code UrgentPrefix}
 	 * labeled alternative in {@link UppaalParser#prefix}.
 	 * @param ctx the parse tree
