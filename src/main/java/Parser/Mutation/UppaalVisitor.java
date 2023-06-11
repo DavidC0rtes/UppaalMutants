@@ -321,7 +321,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
         String type = visit(ctx.type());
 
-        if (type.equals("chan") && this.chanTarget != null ) {
+        if (type.contains("chan") && this.chanTarget != null ) {
             String prefixTarget = "";
             if (ntaOperator.equals("broadChan")) {
                 prefixTarget = "broadcast";
@@ -334,14 +334,17 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             List<UppaalParser.VariableIDContext> _copy = new ArrayList<>(variablesId);
 
             for(UppaalParser.VariableIDContext varID : _copy) {
-                if (varID.IDENTIFIER().getText().equals(chanTarget)) {
-                    varDecl.append(prefixTarget +" chan ")
+                if (varID.IDENTIFIER().getText().equals(chanTarget.getName())) {
+                    varDecl.append(prefixTarget).append(" chan ")
                             .append(varID.getText())
                             .append(";\n");
-
                 }
                 // Prevent re-declarations.
-                variablesId.removeIf(x -> x.IDENTIFIER().getText().equals(chanTarget));
+                variablesId.removeIf(x -> x.IDENTIFIER().getText().equals(chanTarget.getName()));
+//                variablesId.stream()
+//                        .filter(x -> x.IDENTIFIER().getText().equals(chanTarget.getName()))
+//                        .findFirst()
+//                        .ifPresent(variablesId::remove);
             }
         }
 
@@ -370,6 +373,9 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
     public String visitUrgentPrefix(UppaalParser.UrgentPrefixContext ctx) {
         return "urgent";
     }
+
+    @Override
+    public String visitUrgentAndBroadcastPrefix(UppaalParser.UrgentAndBroadcastPrefixContext ctx) { return "urgent broadcast "; }
 
     @Override
     public String visitBroadcastPrefix(UppaalParser.BroadcastPrefixContext ctx) {
@@ -1022,6 +1028,24 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
         }
         label = label.concat("!</label>");
         return label;
+    }
+
+    @Override
+    public String visitLabelSelect(UppaalParser.LabelSelectContext ctx) {
+         String label = ctx.OPEN_SELECT().getText();
+         if (ctx.selectList()!=null) {
+             label+=visit(ctx.selectList());
+         }
+
+         return label.concat(ctx.CLOSE_LABEL().getText());
+    }
+    @Override
+    public String visitSelectList(UppaalParser.SelectListContext ctx) {
+//         if (ctx.selectList() != null) {
+//             String toreturn = ctx.getText().replaceAll(",",",\n");
+//             return toreturn;
+//         }
+         return ctx.toString();
     }
 
     @Override

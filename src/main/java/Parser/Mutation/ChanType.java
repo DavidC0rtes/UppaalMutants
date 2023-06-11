@@ -8,7 +8,7 @@ public class ChanType {
         return prefix;
     }
 
-    private String prefix;
+    private final String prefix;
     public ChanType(String nameIn, int dimensionIn, String prefix){
         this.name = nameIn;
         this.dimension = dimensionIn;

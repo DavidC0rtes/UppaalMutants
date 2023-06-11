@@ -2,9 +2,6 @@ package Parser.NTAExtension;
 
 import Parser.Antlr.UppaalParser;
 import Parser.Antlr.UppaalParserBaseListener;
-import Parser.Graph.Graph;
-import de.tudarmstadt.es.juppaal.Automaton;
-import de.tudarmstadt.es.juppaal.NTA;
 import org.antlr.v4.runtime.RuleContext;
 
 import java.util.*;

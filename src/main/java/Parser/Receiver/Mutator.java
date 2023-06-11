@@ -6,10 +6,7 @@ import Parser.Graph.Graph;
 import Parser.Mutation.ChanType;
 import Parser.Mutation.UppaalVisitor;
 import Parser.NTAExtension.ExtendedListener;
-import de.tudarmstadt.es.juppaal.Automaton;
-import de.tudarmstadt.es.juppaal.Location;
-import de.tudarmstadt.es.juppaal.NTA;
-import de.tudarmstadt.es.juppaal.Transition;
+import be.unamur.uppaal.juppaal.*;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -472,8 +469,6 @@ public class Mutator {
         finalCandidates.removeIf(x -> x.getPrefix().equals(prefix));
 
         String operator = prefix.equals("broadcast") ? "broadChan" : "urgChan";
-
-
         for (ChanType channel : finalCandidates) {
 
             threadMap.get(prefix).add(new Thread(() -> {

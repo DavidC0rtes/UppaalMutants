@@ -9,8 +9,5 @@
         <module name="MutationUppaal" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="MutationUppaal" target="11" />
-    </bytecodeTargetLevel>
   </component>
 </project>

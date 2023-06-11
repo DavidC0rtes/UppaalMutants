@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+<declaration>const int remisen=0;
+const int jagersborg=1;
+const int norgaardsvej=2;
+const int lyngbylokal=3;
+const int fuglevad=4;
+const int brede=5;
+const int orholm=6;
+const int ravnholm=7;
+const int narum=8;
+const int STATIONS=9;
+const int OPENLINES=8;
+const int TRAINS=2;
+const int TRAINSTOPS[TRAINS]={8,9};
+const int MAXLENGTH=9;
+typedef struct {
+int station;int capacity;int HWT;} StationTableEntry;
+const StationTableEntry stationTable[STATIONS]={{remisen,6,1},{jagersborg,2,1},{norgaardsvej,1,1},{lyngbylokal,1,1},{fuglevad,2,1},{brede,1,1},{orholm,2,1},{ravnholm,1,1},{narum,2,1}};
+typedef struct {
+int station1;int station2;} OpenLine;
+typedef struct {
+OpenLine openLine;bool doubleTrack;int MRT;int capacity;int HWT;} OpenLineTableEntry;
+const OpenLineTableEntry openLineTable[OPENLINES]={{{remisen,jagersborg},false,2,1,1},{{jagersborg,norgaardsvej},false,1,1,1},{{norgaardsvej,lyngbylokal},false,1,1,1},{{lyngbylokal,fuglevad},false,1,1,1},{{fuglevad,brede},false,2,1,1},{{brede,orholm},false,2,1,1},{{orholm,ravnholm},false,1,1,1},{{ravnholm,narum},false,2,1,1}};
+typedef struct {
+int stationId;int AT;int DT;int DWT;} StopEntry;
+const StopEntry stops[TRAINS][MAXLENGTH]={{{jagersborg,26,30,1},{norgaardsvej,31,31,0},{lyngbylokal,33,33,0},{fuglevad,35,35,0},{brede,37,37,0},{orholm,39,40,1},{ravnholm,41,41,0},{narum,43,47,1},{-1,-1,-1,-1}},{{remisen,0,34,0},{jagersborg,36,40,1},{norgaardsvej,41,41,0},{lyngbylokal,43,43,0},{fuglevad,45,45,0},{brede,47,47,0},{orholm,49,50,1},{ravnholm,51,51,0},{narum,53,57,1}}};
+typedef int [0, TRAINS - 1] t_id;
+int currentStop[TRAINS]={0,0};
+int [0, TRAINS] trainsAtStation[STATIONS];
+int [0, TRAINS] trainsAtOpenLine[OPENLINES][2];
+typedef struct {
+int train;int expectedExit;} queueEntry;
+queueEntry queue[OPENLINES][2][TRAINS];
+clock time;
+clock TrainClock[TRAINS];
+clock stationLastEntered[STATIONS];
+clock openLineLastEntered[OPENLINES][2];
+clock openLineLastExit[OPENLINES][2];
+int GetMRT(int index){
+return openLineTable[index].MRT;
+}
+int GetOpenLineCapacity(int index){
+return openLineTable[index].capacity;
+}
+int GetOpenLineHWT(int index){
+return openLineTable[index].HWT;
+}
+bool IsOpenLineDoubleTrack(int index){
+return openLineTable[index].doubleTrack;
+}
+int GetStationHWT(int stationId){
+for (i:int [0, STATIONS - 1]){
+if (stationTable[i].station == stationId)return stationTable[i].HWT;
+}
+return - 1;
+}
+int GetStationCapacity(int stationId){
+for (i:int [0, STATIONS - 1]){
+if (stationTable[i].station == stationId)return stationTable[i].capacity;
+}
+return - 1;
+}
+OpenLine GetOpenLine(int openLineId){
+return openLineTable[openLineId].openLine;
+}
+int GetOpenLineId(int station1, int station2){
+for (i:int [0, OPENLINES - 1]){
+if ((openLineTable[i].openLine.station1 == station1 &amp;&amp; openLineTable[i].openLine.station2 == station2) || (openLineTable[i].openLine.station1 == station2 &amp;&amp; openLineTable[i].openLine.station2 == station1))return i;
+}
+return - 1;
+}
+void IncreaseTrainsAtOpenLineDir(int openLineId, int dir){
+if (openLineTable[openLineId].openLine.station1 == dir)trainsAtOpenLine[openLineId][0]++;else trainsAtOpenLine[openLineId][1]++;
+}
+void DecreaseTrainsAtOpenLineDir(int openLineId, int dir){
+if (openLineTable[openLineId].openLine.station1 == dir)trainsAtOpenLine[openLineId][0]--;else trainsAtOpenLine[openLineId][1]--;
+}
+int GetTrainsAtOpenLine(int openLineId){
+return trainsAtOpenLine[openLineId][0] + trainsAtOpenLine[openLineId][1];
+}
+int GetTrainsAtOpenLineDir(int openLineId, int dir){
+if (openLineTable[openLineId].openLine.station1 == dir)return trainsAtOpenLine[openLineId][0];else return trainsAtOpenLine[openLineId][1];
+}
+bool IsOpenLineOccupiedOppositeDirection(int openLineId, int dir){
+OpenLine openLine=openLineTable[openLineId].openLine;
+if (openLine.station1 == dir)return GetTrainsAtOpenLineDir(openLineId , openLine.station2) &gt; 0;else return GetTrainsAtOpenLineDir(openLineId , openLine.station1) &gt; 0;
+}
+int GetQueueExpectedExit(int openLineId, int dir){
+if (IsOpenLineDoubleTrack(openLineId))if (openLineTable[openLineId].openLine.station1 == dir)return queue[openLineId][0][0].expectedExit;else return queue[openLineId][1][0].expectedExit;else return queue[openLineId][0][0].expectedExit;
+}
+int GetQueueLatestTrain(int openLineId, int dir){
+if (IsOpenLineDoubleTrack(openLineId))if (openLineTable[openLineId].openLine.station1 == dir)return queue[openLineId][0][0].train;else return queue[openLineId][1][0].train;else return queue[openLineId][0][0].train;
+}
+void EnterQueue(int openLineId, int trainId, int latestExit, int dir){
+queueEntry entry={trainId,latestExit};
+if (IsOpenLineDoubleTrack(openLineId))if (openLineTable[openLineId].openLine.station1 == dir)queue[openLineId][0][GetTrainsAtOpenLineDir(openLineId , dir)]=entry;else queue[openLineId][1][GetTrainsAtOpenLineDir(openLineId , dir)]=entry;else queue[openLineId][0][GetTrainsAtOpenLine(openLineId)]=entry;
+}
+void ExitQueue(int openLineId, int dir){
+for (i:int [0, TRAINS - 1]){
+if (IsOpenLineDoubleTrack(openLineId))if (openLineTable[openLineId].openLine.station1 == dir){
+queueEntry empty={-1,-1};
+if (i != TRAINS - 1){
+queue[openLineId][0][i]=queue[openLineId][0][i + 1];
+queue[openLineId][0][i + 1]=empty;
+}else queue[openLineId][0][i]=empty;
+}else {
+queueEntry empty={-1,-1};
+if (i != TRAINS - 1){
+queue[openLineId][1][i]=queue[openLineId][1][i + 1];
+queue[openLineId][1][i + 1]=empty;
+}else queue[openLineId][1][i]=empty;
+}else {
+queueEntry empty={-1,-1};
+if (i != TRAINS - 1){
+queue[openLineId][0][i]=queue[openLineId][0][i + 1];
+queue[openLineId][0][i + 1]=empty;
+}else queue[openLineId][0][i]=empty;
+}
+}
+}
+void initEnterExitClocks(){
+for (i:int [0, STATIONS - 1]){
+stationLastEntered[i]=1000000000;
+}
+for (i:int [0, OPENLINES - 1]){
+openLineLastEntered[i][0]=1000000000;
+openLineLastEntered[i][1]=1000000000;
+openLineLastExit[i][0]=1000000000;
+openLineLastExit[i][1]=1000000000;
+}
+}
+void initQueue(){
+for (i:int [0, OPENLINES - 1]){
+for (j:int [0, TRAINS - 1]){
+queueEntry empty={-1,-1};
+queue[i][0][j]=empty;
+queue[i][1][j]=empty;
+}
+}
+}
+void initialise(){
+initQueue();
+initEnterExitClocks();
+}
+</declaration>
+<template>
+<name>Train</name>
+<parameter>t_id id</parameter>
+<declaration>int QueueExpectedExit(){
+return GetQueueExpectedExit(GetOpenLineId(stops[id][currentStop[id]].stationId , stops[id][currentStop[id] + 1].stationId) , stops[id][currentStop[id] + 1].stationId);
+}
+int GetCurrentOpenLine(){
+return GetOpenLineId(stops[id][currentStop[id] - 1].stationId , stops[id][currentStop[id]].stationId);
+}
+int GetNextStation(){
+return stops[id][currentStop[id]].stationId;
+}
+int [- 1, 1] direction(int openLineId, int station){
+if (openLineTable[openLineId].openLine.station1 == station)return 0;else if (openLineTable[openLineId].openLine.station2 == station)return 1;else return - 1;
+}
+int GetDirection(){
+return direction(GetCurrentOpenLine() , GetNextStation());
+}
+bool OpenLineCapacityError(){
+int openLineId=GetCurrentOpenLine();
+int dir=stops[id][currentStop[id]].stationId;
+if (IsOpenLineDoubleTrack(openLineId))return GetTrainsAtOpenLineDir(openLineId , dir) &gt;= GetOpenLineCapacity(openLineId);else return GetTrainsAtOpenLine(openLineId) &gt;= GetOpenLineCapacity(openLineId);
+}
+bool OccupiedOppositeError(){
+return (IsOpenLineOccupiedOppositeDirection(GetCurrentOpenLine() , stops[id][currentStop[id]].stationId) &amp;&amp; ! IsOpenLineDoubleTrack(GetCurrentOpenLine()));
+}
+bool StationCapacityError(){
+return trainsAtStation[stops[id][currentStop[id]].stationId] &gt;= GetStationCapacity(stops[id][currentStop[id]].stationId);
+}
+void LeaveOpenLine(int openLineId, int dir){
+ExitQueue(openLineId , stops[id][currentStop[id]].stationId);
+DecreaseTrainsAtOpenLineDir(openLineId , dir);
+if (openLineTable[openLineId].openLine.station1 == dir)openLineLastExit[openLineId][0]=0;else openLineLastExit[openLineId][1]=0;
+}
+void EnterOpenLine(int openLineId, int dir){
+EnterQueue(GetCurrentOpenLine() , id , stops[id][currentStop[id]].AT , stops[id][currentStop[id]].stationId);
+IncreaseTrainsAtOpenLineDir(openLineId , dir);
+if (openLineTable[openLineId].openLine.station1 == dir)openLineLastEntered[openLineId][0]=0;else openLineLastEntered[openLineId][1]=0;
+}
+void EnterStation(int stationId){
+trainsAtStation[stationId]++;
+stationLastEntered[stationId]=0;
+}
+void LeaveStation(int stationId){
+trainsAtStation[stationId]--;
+}
+bool AttemptedOvertake(){
+return GetQueueLatestTrain(GetCurrentOpenLine() , stops[id][currentStop[id]].stationId) != id;
+}
+clock stationLastEntered[STATIONS];
+</declaration>
+<location id="id0" x="232" y="224">
+<name x="48" y="240">ERROR_OpenLineHeadwayTimeExit</name>
+</location>
+<location id="id1" x="-48" y="-216">
+<name x="-32" y="-224">ERROR_OpenLineOccupiedBothDirections</name>
+</location>
+<location id="id2" x="-48" y="-272">
+<name x="-32" y="-280">ERROR_OpenLineHeadwayTimeEnter</name>
+</location>
+<location id="id3" x="-48" y="-328">
+<name x="-32" y="-336">ERROR_OpenLineCapacity</name>
+</location>
+<location id="id4" x="-352" y="232">
+<name x="-560" y="208">ERROR_StationHeadwayTime</name>
+</location>
+<location id="id5" x="-352" y="176">
+<name x="-528" y="152">ERROR_StationCapacity</name>
+</location>
+<location id="id6" x="-352" y="120">
+<name x="-544" y="112">ERROR_OvertakeAttempt</name>
+</location>
+<location id="id7" x="-64" y="96">
+<name x="-184" y="64">evaluatingOpenLineToStation</name>
+<committed/>
+</location>
+<location id="id8" x="-720" y="-264">
+<name x="-864" y="-280">ERROR_DwellTime</name>
+</location>
+<location id="id9" x="-384" y="-176">
+<name x="-368" y="-176">evaluatingStationToOpenLine</name>
+<committed/>
+</location>
+<location id="id10" x="232" y="152">
+<name x="64" y="160">ERROR_MinimumRunningTime</name>
+</location>
+<location id="id11" x="-904" y="48">
+<name x="-920" y="64">Complete</name>
+</location>
+<location id="id12" x="-904" y="-208">
+<name x="-928" y="-240">Inactive</name>
+<label kind="invariant" x="-888" y="-224">time &lt;= stops[id][0].AT</label>
+</location>
+<location id="id13" x="208" y="16">
+<name x="136" y="-8">EnRoute</name>
+<label kind="invariant" x="-72" y="8">time &lt;= stops[id][currentStop[id]].AT</label>
+</location>
+<location id="id14" x="-544" y="-96">
+<name x="-536" y="-128">AtStation</name>
+<label kind="invariant" x="-528" y="-112">time &lt;= stops[id][currentStop[id]].DT</label>
+</location>
+<init ref="id12"/>
+<transition>
+<source ref="id7"/>
+<target ref="id0"/>
+<label kind="guard" x="-48" y="184">openLineLastExit[GetCurrentOpenLine()][GetDirection()] &lt; GetOpenLineHWT(GetCurrentOpenLine())</label>
+<nail  x="-64" y="224"/>
+</transition>
+<transition>
+<source ref="id7"/>
+<target ref="id5"/>
+<label kind="guard" x="-312" y="176">StationCapacityError()</label>
+<nail  x="-80" y="128"/>
+<nail  x="-80" y="176"/>
+</transition>
+<transition>
+<source ref="id7"/>
+<target ref="id4"/>
+<label kind="guard" x="-312" y="232">stationLastEntered[GetNextStation()] &lt; GetStationHWT(GetNextStation())</label>
+<nail  x="-72" y="128"/>
+<nail  x="-72" y="232"/>
+</transition>
+<transition>
+<source ref="id9"/>
+<target ref="id1"/>
+<label kind="guard" x="-360" y="-240">OccupiedOppositeError()</label>
+<nail  x="-360" y="-200"/>
+<nail  x="-360" y="-216"/>
+</transition>
+<transition>
+<source ref="id9"/>
+<target ref="id2"/>
+<label kind="guard" x="-344" y="-312">openLineLastEntered[GetCurrentOpenLine()][GetDirection()] &lt; GetOpenLineHWT(GetCurrentOpenLine())</label>
+<nail  x="-368" y="-208"/>
+<nail  x="-368" y="-272"/>
+</transition>
+<transition>
+<source ref="id9"/>
+<target ref="id3"/>
+<label kind="guard" x="-360" y="-352">OpenLineCapacityError()</label>
+<nail  x="-376" y="-200"/>
+<nail  x="-376" y="-328"/>
+</transition>
+<transition>
+<source ref="id12"/>
+<target ref="id4"/>
+<label kind="guard" x="-920" y="232">time == stops[id][0].AT &amp;&amp; stationLastEntered[GetNextStation()] &lt; GetStationHWT(GetNextStation())</label>
+<nail  x="-944" y="-176"/>
+<nail  x="-944" y="232"/>
+</transition>
+<transition>
+<source ref="id12"/>
+<target ref="id5"/>
+<label kind="guard" x="-904" y="144">time == stops[id][0].AT &amp;&amp; StationCapacityError()</label>
+<nail  x="-928" y="-184"/>
+<nail  x="-928" y="176"/>
+</transition>
+<transition>
+<source ref="id7"/>
+<target ref="id6"/>
+<label kind="guard" x="-312" y="120">AttemptedOvertake()</label>
+<nail  x="-88" y="112"/>
+<nail  x="-88" y="120"/>
+</transition>
+<transition>
+<source ref="id9"/>
+<target ref="id13"/>
+<label kind="guard" x="-128" y="-168">TrainClock[id] &gt;= stops[id][currentStop[id] - 1].DWT &amp;&amp; ! OpenLineCapacityError() &amp;&amp; openLineLastEntered[GetCurrentOpenLine()][GetDirection()] &gt;= GetOpenLineHWT(GetCurrentOpenLine()) &amp;&amp; ! OccupiedOppositeError()</label>
+<label kind="assignment" x="-128" y="-88">TrainClock[id]=0,EnterOpenLine(GetCurrentOpenLine(),GetNextStation()),LeaveStation(stops[id][currentStop[id]-1].stationId)</label>
+<nail  x="208" y="-176"/>
+</transition>
+<transition>
+<source ref="id12"/>
+<target ref="id14"/>
+<label kind="guard" x="-896" y="-200">time == stops[id][0].AT &amp;&amp; ! StationCapacityError() &amp;&amp; stationLastEntered[stops[id][0].stationId] &gt;= GetStationHWT(stops[id][0].stationId)</label>
+<label kind="assignment" x="-896" y="-136">EnterStation(stops[id][0].stationId),TrainClock[id]=0</label>
+<nail  x="-904" y="-104"/>
+<nail  x="-584" y="-104"/>
+</transition>
+<transition>
+<source ref="id9"/>
+<target ref="id8"/>
+<label kind="guard" x="-712" y="-288">TrainClock[id] &lt; stops[id][currentStop[id] - 1].DWT</label>
+<nail  x="-384" y="-264"/>
+</transition>
+<transition>
+<source ref="id14"/>
+<target ref="id9"/>
+<label kind="guard" x="-688" y="-248">time &gt;= stops[id][currentStop[id]].DT &amp;&amp; TRAINSTOPS[id] != (currentStop[id] + 1) &amp;&amp; (QueueExpectedExit() &gt; time || QueueExpectedExit() == - 1)</label>
+<label kind="assignment" x="-600" y="-192">currentStop[id]++</label>
+<nail  x="-544" y="-176"/>
+</transition>
+<transition>
+<source ref="id7"/>
+<target ref="id10"/>
+<label kind="guard" x="-40" y="120">TrainClock[id] &lt; GetMRT(GetCurrentOpenLine())</label>
+<nail  x="-56" y="128"/>
+<nail  x="-56" y="152"/>
+</transition>
+<transition>
+<source ref="id7"/>
+<target ref="id14"/>
+<label kind="guard" x="-528" y="-72">TrainClock[id] &gt;= GetMRT(GetCurrentOpenLine()) &amp;&amp; ! AttemptedOvertake() &amp;&amp; ! StationCapacityError() &amp;&amp; stationLastEntered[GetNextStation()] &gt;= GetStationHWT(GetNextStation()) &amp;&amp; openLineLastExit[GetCurrentOpenLine()][GetDirection()] &gt;= GetOpenLineHWT(GetCurrentOpenLine())</label>
+<label kind="assignment" x="-528" y="24">LeaveOpenLine(GetCurrentOpenLine(),GetNextStation()),EnterStation(GetNextStation()),TrainClock[id]=0</label>
+<nail  x="-544" y="96"/>
+</transition>
+<transition>
+<source ref="id13"/>
+<target ref="id7"/>
+<label kind="guard" x="-24" y="40">time &gt;= stops[id][currentStop[id]].AT</label>
+<nail  x="208" y="96"/>
+</transition>
+<transition>
+<source ref="id14"/>
+<target ref="id11"/>
+<label kind="guard" x="-896" y="-24">TRAINSTOPS[id] == (currentStop[id] + 1) &amp;&amp; time == stops[id][currentStop[id]].DT</label>
+<label kind="assignment" x="-896" y="8">LeaveStation(stops[id][TRAINSTOPS[id]-1].stationId)</label>
+<nail  x="-584" y="-88"/>
+<nail  x="-904" y="-88"/>
+</transition>
+</template>
+<template>
+<name>Initialiser</name>
+<location id="id15" x="-288" y="-128">
+<committed/>
+</location>
+<location id="id16" x="-288" y="-32">
+</location>
+<init ref="id15"/>
+<transition>
+<source ref="id15"/>
+<target ref="id16"/>
+<label kind="assignment" x="-280" y="-96">initialise()</label>
+</transition>
+</template>
+<system>
+// Place template instantiations here.
+// List one or more processes to be composed into a system.
+system Train, Initialiser;
+</system>
+</nta>
