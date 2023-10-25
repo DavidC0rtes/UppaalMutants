@@ -24,7 +24,7 @@ const int SV[sid_t][pid_t] = // For each task:
             {0, 0, 3, 4}};   // Stop sema 1.
 // -----------------------------------------------------
 
-broadcast chan	done, ready, run, stop, tau;
+broadcast chan	done, ready, run, stop;
 clock 	time;
 
 int p[pid_t]; // Dynamic priorities.
@@ -152,7 +152,7 @@ void updatePriority(int s)
 }</declaration>
 		<location id="id0" x="-40" y="64">
 			<name x="-56" y="32">EndPeriod</name>
-			<label kind="invariant" x="-128" y="64">t&lt;=T[id] &amp;&amp;
+			<label kind="invariant" x="-153" y="76">t&lt;=T[id] &amp;&amp;
 wcrt'==0</label>
 		</location>
 		<location id="id1" x="32" y="64">
@@ -170,6 +170,7 @@ wcrt'==0</label>
 		</location>
 		<location id="id4" x="32" y="480">
 			<name x="16" y="448">Blocked</name>
+			<label kind="invariant" x="8" y="496">ax'==0</label>
 			<label kind="exponentialrate" x="22" y="514">1</label>
 		</location>
 		<location id="id5" x="192" y="320">
@@ -187,10 +188,9 @@ wcrt=0</label>
 		<transition>
 			<source ref="id3"/>
 			<target ref="id3"/>
-			<label kind="guard" x="-208" y="296">r &lt; ns[id] &amp;&amp; ax == ci[id][r][0]</label>
-			<label kind="synchronisation" x="-208" y="312">ready!</label>
-			<label kind="assignment" x="-208" y="328">updatePriority(ci[id][r][1]),
-r++</label>
+			<label kind="guard" x="-229" y="280">r &lt; ns[id] &amp;&amp; ax == ci[id][r][0]</label>
+			<label kind="synchronisation" x="-119" y="314">ready!</label>
+			<label kind="assignment" x="-110" y="331">r++</label>
 			<nail x="-32" y="296"/>
 			<nail x="-32" y="344"/>
 		</transition>
@@ -199,13 +199,11 @@ r++</label>
 			<target ref="id2"/>
 			<label kind="guard" x="48" y="80">t&gt;=E[id]</label>
 			<label kind="synchronisation" x="48" y="96">ready!</label>
-			<label kind="assignment" x="48" y="112">t=0, wcrt = 0,
-add()</label>
+			<label kind="assignment" x="48" y="112">t=0, wcrt = 0</label>
 		</transition>
 		<transition>
 			<source ref="id2"/>
 			<target ref="id3"/>
-			<label kind="guard" x="40" y="208">head()==id</label>
 			<label kind="synchronisation" x="40" y="224">run?</label>
 			<label kind="assignment" x="40" y="240">ax=0</label>
 		</transition>
@@ -219,7 +217,6 @@ add()</label>
 		<transition>
 			<source ref="id4"/>
 			<target ref="id3"/>
-			<label kind="guard" x="104" y="392">head()==id</label>
 			<label kind="synchronisation" x="104" y="376">run?</label>
 			<nail x="96" y="448"/>
 			<nail x="96" y="352"/>
@@ -227,12 +224,10 @@ add()</label>
 		<transition>
 			<source ref="id3"/>
 			<target ref="id0"/>
-			<label kind="guard" x="-144" y="144">head() == id &amp;&amp;
-ax&gt;=C[id] &amp;&amp;
+			<label kind="guard" x="-161" y="136">ax&gt;=C[id] &amp;&amp;
 r == ns[id]</label>
-			<label kind="synchronisation" x="-144" y="192">done!</label>
-			<label kind="assignment" x="-144" y="208">remove(),
-r = 0</label>
+			<label kind="synchronisation" x="-119" y="204">done!</label>
+			<label kind="assignment" x="-110" y="238">r = 0</label>
 			<nail x="-40" y="288"/>
 		</transition>
 		<transition>
@@ -281,12 +276,10 @@ r = 0</label>
 		<transition>
 			<source ref="id6"/>
 			<target ref="id7"/>
-			<label kind="assignment" x="40" y="72">initialize()</label>
 		</transition>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id8"/>
-			<label kind="guard" x="-40" y="168">isEmpty()</label>
 		</transition>
 		<transition>
 			<source ref="id8"/>
@@ -296,7 +289,6 @@ r = 0</label>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id9"/>
-			<label kind="guard" x="-64" y="120">!isEmpty()</label>
 			<nail x="-64" y="144"/>
 			<nail x="-64" y="288"/>
 		</transition>
@@ -324,14 +316,6 @@ r = 0</label>
 		</transition>
 	</template>
 	<system>system Task, Scheduler;
-
-gantt {
-  Task(i : pid_t): Task(i).Ready -&gt; 1,
-                   Task(i).Running -&gt; 2,
-                   Task(i).Blocked -&gt; 3,
-                   Task(i).Error -&gt; 0,
-                   for(j : sid_t) Task(i).sema[j] -&gt; 6;
-}
 </system>
 	<queries>
 		<query>

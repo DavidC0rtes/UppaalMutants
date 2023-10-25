@@ -4,6 +4,8 @@ Mutation*
 target/
 target/**/*
 out
+Mutants*
+ClassicMutants*
 *.class
 pom.xml.tag
 pom.xml.releaseBackup

@@ -863,19 +863,25 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
     @Override
     public String visitLabelLoc(UppaalParser.LabelLocContext ctx) {
-        String labelLoc = ctx.OPEN_INV().getText();
+         StringBuilder labelLoc = new StringBuilder();
+         if (ctx.OPEN_INV() != null) {
+             labelLoc.append(ctx.OPEN_INV().getText());
+         }
+        if (ctx.OPEN_EXPRATE() != null) {
+            labelLoc.append(ctx.OPEN_EXPRATE().getText());
+        }
        // labelLoc = labelLoc.concat(ctx.STRING().getText());
 
         if(ctx.misc()!=null){
             for (UppaalParser.MiscContext misc : ctx.misc())
-            labelLoc = labelLoc.concat(visit(misc));
+            labelLoc = labelLoc.append(visit(misc));
         }
 
         //labelLoc = labelLoc.concat(">");
 
-        labelLoc = labelLoc.concat(visit(ctx.expr()));
-        labelLoc = labelLoc.concat("</label>");
-        return labelLoc;
+        labelLoc = labelLoc.append(visit(ctx.expr()));
+        labelLoc = labelLoc.append("</label>");
+        return labelLoc.toString();
     }
 
     @Override
@@ -1019,8 +1025,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
             String chanName = visit(ctx.expr());
             String chanId = chanName.split("\\[")[0];
             if ( chanTarget != null && (chanId.equals(chanTarget.getName()) && ctx.hashCode() == outHashCode)
-                    && ( ntaOperator.equals("delOutput") || ntaOperator.equals("delSync") )
-                    && ( !chanTarget.getPrefix().equals("broadcast"))) {
+                    && ( ntaOperator.equals("delOutput") || ntaOperator.equals("delSync") )) {
                 return "";
             }
 
@@ -1409,7 +1414,7 @@ public class UppaalVisitor extends UppaalParserBaseVisitor<String> implements Vi
 
     @Override
     public String visitComment(UppaalParser.CommentContext ctx) {
-        return ("<comment>").concat(visit(ctx.anything())).concat("</comment>");
+        return ("<comment>").concat( visit(ctx.anything())).concat("</comment>");
     }
 
     @Override

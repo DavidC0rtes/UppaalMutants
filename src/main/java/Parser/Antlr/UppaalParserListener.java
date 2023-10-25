@@ -1,4 +1,4 @@
-// Generated from /home/david/Documents/UppaalMutants/src/main/java/Parser/Antlr/UppaalParser.g4 by ANTLR 4.10.1
+// Generated from UppaalParser.g4 by ANTLR 4.10.1
 package Parser.Antlr;
 
     import java.util.HashMap;

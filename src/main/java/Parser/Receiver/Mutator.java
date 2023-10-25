@@ -7,6 +7,8 @@ import Parser.Mutation.ChanType;
 import Parser.Mutation.UppaalVisitor;
 import Parser.NTAExtension.ExtendedListener;
 import be.unamur.uppaal.juppaal.*;
+import be.unamur.uppaal.juppaal.declarations.Channel;
+import be.unamur.uppaal.juppaal.labels.Synchronization;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -18,42 +20,45 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Class <code>Mutator</code> defines the "engine" responsible
  * for scheduling mutations via the selected mutation operators using threads.
  */
 public class Mutator {
-    private File fileMutants;
+    private final File fileMutants;
 
-    private String envTarget;
+    private final String envTarget;
 
-    private ArrayList<Thread> threadsTmi;
-    private ArrayList<Thread> threadsTad;
-    private ArrayList<Thread> threadsTadSync;
-    private ArrayList<Thread> threadsTadRandomSync;
-    private ArrayList<Thread> threadsSmi;
-    private ArrayList<Thread> threadsSmiNoRedundant;
-    private ArrayList<Thread> threadsCxl;
-    private ArrayList<Thread> threadsCxs;
-    private ArrayList<Thread> threadsCcn;
+    private final ArrayList<Thread> threadsTmi;
+    private final ArrayList<Thread> threadsTad;
+    private final ArrayList<Thread> threadsTadSync;
+    private final ArrayList<Thread> threadsTadRandomSync;
+    private final ArrayList<Thread> threadsSmi;
+    private final ArrayList<Thread> threadsSmiNoRedundant;
+    private final ArrayList<Thread> threadsCxl;
+    private final ArrayList<Thread> threadsCxs;
+    private final ArrayList<Thread> threadsCcn;
 
-    private ArrayList<Thread> threadsBroadChan;
-    private ArrayList<Thread> threadsDelSync = new ArrayList<>();
-    private ArrayList<Thread> threadsMaskVarClocks = new ArrayList<>();
+    private final ArrayList<Thread> threadsBroadChan;
+    private final ArrayList<Thread> threadsDelSync = new ArrayList<>();
+    private final ArrayList<Thread> threadsDelSyncNG = new ArrayList<>();
+    private final ArrayList<Thread> threadsMaskVarClocks = new ArrayList<>();
     private final ArrayList<Thread> threadsMaskVarChannels = new ArrayList<>();
     private final ArrayList<Thread> threadsUrgChan = new ArrayList<>();
-    private ArrayList<Thread> threadsParSeq = new ArrayList<>();
+    private final ArrayList<Thread> threadsParSeq = new ArrayList<>();
     private final ArrayList<Thread> threadsdelOutput = new ArrayList<>();
     private final ArrayList<Thread> threadsCommLoc = new ArrayList<>();
     private final ArrayList<Thread> threadsUrgLoc = new ArrayList<>();
     private final ArrayList<Thread> threadsReplaceMsg = new ArrayList<>();
     private final ArrayList<Thread> threadsTadNoRedundant = new ArrayList<>();
-    private UppaalParser parser;
-    private ParseTree tree;
-    private ExtendedListener listener;
-    private ArrayList arrayData = new ArrayList();
-    private NTA nta;
+    private final UppaalParser parser;
+    private final ParseTree tree;
+    private final ExtendedListener listener;
+    private final ArrayList arrayData = new ArrayList();
+    private final NTA nta;
+    private final Map<String, Channel> channels;
     private static final Logger logger = LoggerFactory.getLogger(Mutator.class);
     public Mutator(String modelFile, File fileMutants, String envTarget) throws IOException {
 
@@ -82,6 +87,9 @@ public class Mutator {
         // Create listener then feed to walker
         listener = new ExtendedListener();
         walker.walk(listener, tree);
+
+        this.nta = new NTA(modelFile);
+        this.channels = nta.populateChannels();
     }
 
     public String infoMutants(){
@@ -98,6 +106,7 @@ public class Mutator {
         info = info.concat("ccn ").concat(Integer.toString(this.threadsCcn.size())).concat("\n");
         info = info.concat("broadChan ").concat(Integer.toString(this.threadsBroadChan.size())).concat("\n");
         info = info.concat("delSync ").concat(Integer.toString(this.threadsDelSync.size())).concat("\n");
+        info = info.concat("delSyncNG ").concat(Integer.toString(this.threadsDelSyncNG.size())).concat("\n");
         info = info.concat("parSeq ").concat(Integer.toString(this.threadsParSeq.size())).concat("\n");
         info = info.concat("maskVarClocks ").concat(Integer.toString(this.threadsMaskVarClocks.size())).concat("\n");
         info = info.concat("maskVarChannels ").concat(Integer.toString(this.threadsMaskVarChannels.size())).concat("\n");
@@ -127,6 +136,7 @@ public class Mutator {
                         +this.threadsCommLoc.size()
                         +this.threadsUrgLoc.size()
                         +this.threadsReplaceMsg.size()
+                        +threadsDelSyncNG.size()
         )).concat("\n");
         return info;
     }
@@ -153,8 +163,10 @@ public class Mutator {
         int killedBroadChan = killedMutants(this.threadsBroadChan, pathIn, pathVerifyTa, pathQuery);
         addKilledData("broadChan", threadsBroadChan.size(), killedBroadChan);
         int killedDelSync = killedMutants(this.threadsDelSync, pathIn, pathVerifyTa, pathQuery);
+        int killedDelSyncNG = killedMutants(this.threadsDelSyncNG, pathIn, pathVerifyTa, pathQuery);
 
         addKilledData("delSync", threadsDelSync.size(), killedDelSync);
+        addKilledData("delSyncNG", threadsDelSyncNG.size(), killedDelSyncNG);
         int killedParSeq = killedMutants(this.threadsParSeq, pathIn, pathVerifyTa, pathQuery);
 
         addKilledData("parSeq", threadsParSeq.size(), killedParSeq);
@@ -203,6 +215,8 @@ public class Mutator {
         log = log.concat(Integer.toString(killedBroadChan));
         log = log.concat("\nDelSync killed ");
         log = log.concat(Integer.toString(killedDelSync));
+        log = log.concat("\nDelSyncNG killed ");
+        log = log.concat(Integer.toString(killedDelSync));
         log = log.concat("\nParSeq killed ");
         log = log.concat(Integer.toString(killedParSeq));
         log = log.concat("\nMaskVarClocks killed ");
@@ -221,7 +235,7 @@ public class Mutator {
         log = log.concat(Integer.toString(killedReplaceMsg));
         log = log.concat("\nScore ").concat(Integer.toString(
                 killedTmi+killedTad+killedTadSync+killedTadRandomSync+killedSmi+killedCxl+killedCxs+killedCcn+
-                        killedBroadChan + killedDelSync + killedParSeq + killedMaskVarClocks + killedMaskVarChannels
+                        killedBroadChan + killedDelSync + killedDelSyncNG + killedParSeq + killedMaskVarClocks + killedMaskVarChannels
                         + killedUrgChan + killedDelOutput  + killedCommLoc + killedUrgLoc + killedReplaceMsg + killedTadNoRedundant
         )).concat("/").concat(Integer.toString(
                 this.threadsTmi.size()
@@ -236,6 +250,7 @@ public class Mutator {
                         +this.threadsCcn.size()
                         +this.threadsBroadChan.size()
                         +this.threadsDelSync.size()
+                        +threadsDelSyncNG.size()
                         +this.threadsParSeq.size()
                         +this.threadsMaskVarClocks.size()
                         +this.threadsMaskVarChannels.size()
@@ -284,13 +299,14 @@ public class Mutator {
             String line = reader.readLine();*/
 
             if(line == null || line.isEmpty() ){
-                System.err.println("got error from verifier: " + new String(p.getErrorStream().readAllBytes()));
+                System.err.println(mutantPath + " got error from verifier: " + new String(p.getErrorStream().readAllBytes()));
                 dead++;
                 continue;
             }
-            if (line.contains("NOT satisfied") || line.contains("MAY be satisfied")) {
+            if (!line.contains("is satisfied")) {
                 dead++;
-                break;
+                System.out.println("Mutant "+ mutantPath + " result: " +line);
+                continue;
             }
 
             /*while ((line = reader.readLine())!=null){
@@ -320,6 +336,7 @@ public class Mutator {
         this.runThreads(this.threadsCcn);
         this.runThreads(this.threadsBroadChan);
         this.runThreads(this.threadsDelSync);
+        this.runThreads(this.threadsDelSyncNG);
         this.runThreads(this.threadsParSeq);
         this.runThreads(this.threadsMaskVarClocks);
         this.runThreads(this.threadsMaskVarChannels);
@@ -353,6 +370,7 @@ public class Mutator {
         this.joinThreads(this.threadsCcn);
         this.joinThreads(this.threadsBroadChan);
         this.joinThreads(this.threadsDelSync);
+        this.joinThreads(this.threadsDelSyncNG);
         this.joinThreads(this.threadsParSeq);
         this.joinThreads(this.threadsMaskVarClocks);
         this.joinThreads(this.threadsMaskVarChannels);
@@ -490,6 +508,81 @@ public class Mutator {
     }
 
     public void prepareDelSyncOperator() {
+        // iterate through all automata of mutant
+        for (Automaton taio : this.nta.getAutomata()) {
+            // iterate through all transitions of taio
+            ArrayList<Transition> ogTransitions = taio.getTransitions();
+            // Using classic for instead of for-each because we need to modify elements without affecting this.nta.
+            for (int i = 0; i < ogTransitions.size(); i++) {
+                handleTransition(ogTransitions.get(i), i);
+            }
+        }
+    }
+
+    private void handleTransition(Transition transition, int idx) {
+        Synchronization sync = transition.getSync();
+        if (sync != null && !sync.toString().isEmpty()) {
+            Channel chan = channels.get(sync.getPureChannelName());
+            // if the channel is not binary, we only delete the receiver to prevent deadlocks.
+            if (chan.getType() != Channel.ChanType.BINARY) {
+                if (Objects.requireNonNull(sync.getSyncType()) == Synchronization.SyncType.RECEIVER) {
+                    processSync(transition, idx, true);
+                } else if (Objects.requireNonNull(sync.getSyncType()) == Synchronization.SyncType.INITIATOR) {
+                    processSync(transition, idx, false);
+                }
+            } else {
+                // delete receiver and initiator
+                processMultipleSyncs(transition.getAutomaton().getName().toString(), idx);
+            }
+        }
+    }
+
+    private void processMultipleSyncs(String automatonName, int idx) {
+        NTA mutant = new NTA(this.nta.getModelPath());
+
+        Transition t1 = mutant.getAutomaton(automatonName).getTransitions().get(idx);
+
+        for (Automaton ta : mutant.getAutomata()) {
+            if (!ta.getName().toString().equals(automatonName)) {
+                for (Transition t2 : ta.getTransitions()) {
+                    if (t2.getSync() != null && !t2.getSync().toString().isEmpty()) {
+                        if (t2.getSync().getChannelName().equals(t1.getSync().getChannelName())
+                            && t1.getSync().getSyncType() != t2.getSync().getSyncType())
+                        { // a matching transition is found
+                            String fileName = "delSync_" + automatonName + "_"+ta.getName()+"_"+t1.getSync().getChannelName()+".xml";
+                            t2.setSync(null);
+                            t1.setSync(null);
+                            String filePath = this.fileMutants.getPath() + File.separator + fileName;
+                            threadsDelSync.add(new Thread(() -> mutant.writeModelToFile(filePath), fileName));
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void processSync(Transition transition, int idx, boolean guideline) {
+        NTA mutant = new NTA(this.nta.getModelPath());
+        String taioName = transition.getAutomaton().getName().toString();
+
+        Transition mutantTransition = mutant.getAutomaton(taioName).getTransitions().get(idx);
+        mutantTransition.setSync(null);
+        String prefix = guideline ? "delSync_" : "delSyncNG_";
+        if (guideline) {
+            String fileName = prefix + taioName + idx + ".xml";
+            String filePath = this.fileMutants.getPath() + File.separator + fileName;
+
+            threadsDelSync.add(new Thread(() -> mutant.writeModelToFile(filePath), fileName));
+        } else {
+            String fileName = prefix + taioName + idx + ".xml";
+            String filePath = this.fileMutants.getPath() + File.separator + fileName;
+
+            threadsDelSyncNG.add(new Thread(() -> mutant.writeModelToFile(filePath), fileName));
+        }
+    }
+
+    /*public void prepareDelSyncOperator() {
         // Only interested in global channels.
         ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
 
@@ -522,7 +615,7 @@ public class Mutator {
             }
         }
     }
-
+*/
     public void prepareParSeqOperator() {
         Set<String> chanNames = listener.getChanToTemplate().keySet();
         // Only interested in global channels.
@@ -1010,7 +1103,6 @@ public class Mutator {
     }
 
     public void prepareTadNoRedundantOperator() {
-        this.nta = new NTA();
         //Each template
         for (String template : parser.getTransitionsTad().keySet()) {
             //Each source
@@ -1081,7 +1173,7 @@ public class Mutator {
 
 
     public String getCSVKilledMutants() {
-        StringBuilder csv = new StringBuilder("");
+        StringBuilder csv = new StringBuilder();
         for (int i = 2; i < arrayData.size(); i+=3) {
             csv.append(arrayData.get(i - 2).toString());
             csv.append(",");
