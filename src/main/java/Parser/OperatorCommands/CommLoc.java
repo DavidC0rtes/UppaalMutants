@@ -13,7 +13,7 @@ public class CommLoc implements Command {
     @Override
 
     public void execute() {
-        mutantOperator.prepareLocModifierOp("commLoc");
+        mutantOperator.prepareLocModifierOpV2("commLoc");
     }
 
     @Override

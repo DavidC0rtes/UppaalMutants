@@ -3,6 +3,7 @@ package Parser.Receiver;
 import Parser.Antlr.UppaalLexer;
 import Parser.Antlr.UppaalParser;
 import Parser.Graph.Graph;
+import Parser.Main.AppConfig;
 import Parser.Mutation.ChanType;
 import Parser.Mutation.UppaalVisitor;
 import Parser.NTAExtension.ExtendedListener;
@@ -20,16 +21,16 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Class <code>Mutator</code> defines the "engine" responsible
  * for scheduling mutations via the selected mutation operators using threads.
  */
 public class Mutator {
-    private final File fileMutants;
+    private File fileMutants;
 
-    private final String envTarget;
+    private String envTarget;
+    private final String pathVerifyta;
 
     private final ArrayList<Thread> threadsTmi;
     private final ArrayList<Thread> threadsTad;
@@ -53,16 +54,16 @@ public class Mutator {
     private final ArrayList<Thread> threadsUrgLoc = new ArrayList<>();
     private final ArrayList<Thread> threadsReplaceMsg = new ArrayList<>();
     private final ArrayList<Thread> threadsTadNoRedundant = new ArrayList<>();
-    private final UppaalParser parser;
-    private final ParseTree tree;
-    private final ExtendedListener listener;
+    private UppaalParser parser;
+    private ParseTree tree;
+    private ExtendedListener listener;
     private final ArrayList arrayData = new ArrayList();
-    private final NTA nta;
-    private final Map<String, Channel> channels;
+    private NTA nta;
+    private Map<String, Channel> channels;
     private static final Logger logger = LoggerFactory.getLogger(Mutator.class);
-    public Mutator(String modelFile, File fileMutants, String envTarget) throws IOException {
 
-        this.fileMutants = fileMutants;
+    public Mutator() {
+        this.pathVerifyta = AppConfig.getInstance().getVerifyTAPath();
         this.threadsTmi = new ArrayList<>();
         this.threadsTad = new ArrayList<>();
         this.threadsTadSync = new ArrayList<>();
@@ -73,7 +74,9 @@ public class Mutator {
         this.threadsCxs = new ArrayList<>();
         this.threadsCcn = new ArrayList<>();
         this.threadsBroadChan = new ArrayList<>();
+    }
 
+    public void parseModel(String modelFile, String envTarget) throws IOException {
         CharStream input = CharStreams.fromFileName(modelFile);
         UppaalLexer lexer = new UppaalLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -90,6 +93,23 @@ public class Mutator {
 
         this.nta = new NTA(modelFile);
         this.channels = nta.populateChannels();
+    }
+
+    public Mutator(String modelFile, File fileMutants, String envTarget) throws IOException {
+        this.fileMutants = fileMutants;
+        this.pathVerifyta = AppConfig.getInstance().getVerifyTAPath();
+        this.threadsTmi = new ArrayList<>();
+        this.threadsTad = new ArrayList<>();
+        this.threadsTadSync = new ArrayList<>();
+        this.threadsTadRandomSync = new ArrayList<>();
+        this.threadsSmi = new ArrayList<>();
+        this.threadsSmiNoRedundant = new ArrayList<>();
+        this.threadsCxl = new ArrayList<>();
+        this.threadsCxs = new ArrayList<>();
+        this.threadsCcn = new ArrayList<>();
+        this.threadsBroadChan = new ArrayList<>();
+
+        parseModel(modelFile, envTarget);
     }
 
     public String infoMutants(){
@@ -263,6 +283,55 @@ public class Mutator {
         log = log.concat("\n");
         return log;
     }
+
+    private ArrayList<String> getMutantsPaths(ArrayList<Thread> operatorThreads, String pathIn) {
+        ArrayList<String> mutantsPaths = new ArrayList<>();
+        for (String mutant : operatorThreads.stream().map(Thread::getName).toArray(String[]::new)) {
+            String mutantPath = pathIn + File.separator + mutant;
+            mutantsPaths.add(mutantPath);
+        }
+        return mutantsPaths;
+    }
+    public int killedMutants(ArrayList<String> mutantPaths, String pathQuery) {
+        int dead = 0;
+        for (String mutantPath : mutantPaths) {
+            String command = pathVerifyta + " -q " + mutantPath;
+
+            if (!pathQuery.isEmpty()) {
+                command += " " + pathQuery;
+            }
+
+            ProcessBuilder verifypb = new ProcessBuilder(command.split(""));
+
+            try {
+                Process p = verifypb.start();
+
+                if (!p.waitFor(40, TimeUnit.SECONDS)) {
+                    System.err.printf("Process %s timed out%n", p.info().toString());
+                    continue;
+                }
+
+                String line = new String(p.getInputStream().readAllBytes());
+
+                if (line == null || line.isEmpty()) {
+                    System.err.println(mutantPath + " got error from verifier: " + new String(p.getErrorStream().readAllBytes()));
+                    dead++;
+                    continue;
+                }
+
+                if (!line.contains("is satisfied")) {
+                    dead++;
+                    System.out.println("Mutant " + mutantPath + " result: " + line);
+                } else {
+                    System.out.println("Mutant " + mutantPath + " result: " + line);
+                }
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        return dead;
+    }
+
 
     /**
      * @param operatorThreads
@@ -440,6 +509,37 @@ public class Mutator {
         parser.getTransitionsTad();
     }
 
+    public void prepareLocModifierOpV2(String operator) {
+        Map<String, ArrayList<Thread>> threadMap = Map.of(
+                "commLoc", threadsCommLoc,
+                "urgLoc", threadsUrgLoc
+        );
+        for (Automaton automaton : this.nta.getAutomata()) {
+            for (Location location : automaton.getLocations()) {
+               if (canApplyLocModifier(location, operator)) {
+                   NTA mutant = new NTA(this.nta.getAbsoluteModelPath());
+                   Location mloc = mutant.getAutomaton(location.getAutomaton().getName().toString())
+                                    .getLocation(location.getName().toString());
+
+                   Location.LocationType ltype = operator.equals("commLoc")
+                           ? Location.LocationType.COMMITTED
+                           : Location.LocationType.URGENT;
+
+                   mloc.setType(ltype);
+                   String fileName = operator + "_" + automaton.getName() + "_"+location.getName()+".xml";
+                   String path = this.fileMutants.getPath() + File.separator + fileName;
+                   threadMap.get(operator).add(new Thread(() ->  mutant.writeModelToFile(path), path));
+               }
+            }
+        }
+    }
+
+    private boolean canApplyLocModifier(Location location, String operator) {
+        if (operator.equals("commLoc") && !location.getType().equals(Location.LocationType.COMMITTED)) {
+            return true;
+        }
+        else return operator.equals("urgLoc") && !location.getType().equals(Location.LocationType.URGENT);
+    }
     public void prepareLocModifierOp(String operator) {
         ArrayList<Integer> locations = listener.getLocations();
         Map<String, ArrayList<Thread>> threadMap = Map.of(
@@ -514,12 +614,12 @@ public class Mutator {
             ArrayList<Transition> ogTransitions = taio.getTransitions();
             // Using classic for instead of for-each because we need to modify elements without affecting this.nta.
             for (int i = 0; i < ogTransitions.size(); i++) {
-                handleTransition(ogTransitions.get(i), i);
+                handleTransitionDelSync(ogTransitions.get(i), i);
             }
         }
     }
 
-    private void handleTransition(Transition transition, int idx) {
+    private void handleTransitionDelSync(Transition transition, int idx) {
         Synchronization sync = transition.getSync();
         if (sync != null && !sync.toString().isEmpty()) {
             Channel chan = channels.get(sync.getPureChannelName());

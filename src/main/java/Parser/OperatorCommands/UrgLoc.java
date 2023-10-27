@@ -11,7 +11,7 @@ public class UrgLoc implements Command {
     }
     @Override
     public void execute() {
-       mutantOperator.prepareLocModifierOp("urgLoc");
+       mutantOperator.prepareLocModifierOpV2("urgLoc");
     }
 
     @Override
