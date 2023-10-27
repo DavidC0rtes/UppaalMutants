@@ -125,8 +125,8 @@ public class EntryPoint {
                 new TadRandomSync(mutator),
                 new TadNoRedundant(mutator),
                 new TadSync(mutator, opt.getTadSync()),
-                new Tmi(mutator)
-/*                new BroadChan(mutator),
+                new Tmi(mutator),
+                new BroadChan(mutator),
                 new UrgChan(mutator),
                 new DelSync(mutator),
                 new SyncSeq(mutator),
@@ -135,7 +135,7 @@ public class EntryPoint {
                 new DelOutput(mutator),
                 new CommLoc(mutator),
                 new UrgLoc(mutator),
-                new ReplaceMsg(mutator)*/
+                new ReplaceMsg(mutator)
         );
 
         if (!addAllResult) {
