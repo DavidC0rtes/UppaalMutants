@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Class <code>Mutator</code> defines the "engine" responsible
@@ -90,9 +91,6 @@ public class Mutator {
         // Create listener then feed to walker
         listener = new ExtendedListener();
         walker.walk(listener, tree);
-
-        this.nta = new NTA(modelFile);
-        this.channels = nta.populateChannels();
     }
 
     public Mutator(String modelFile, File fileMutants, String envTarget) throws IOException {
@@ -110,6 +108,8 @@ public class Mutator {
         this.threadsBroadChan = new ArrayList<>();
 
         parseModel(modelFile, envTarget);
+        this.nta = new NTA(modelFile);
+        this.channels = nta.populateChannels();
     }
 
     public String infoMutants(){
@@ -509,6 +509,12 @@ public class Mutator {
         parser.getTransitionsTad();
     }
 
+    private boolean canApplyLocModifier(Location location, String operator) {
+        if (operator.equals("commLoc") && !location.getType().equals(Location.LocationType.COMMITTED)) {
+            return true;
+        }
+        else return operator.equals("urgLoc") && !location.getType().equals(Location.LocationType.URGENT);
+    }
     public void prepareLocModifierOpV2(String operator) {
         Map<String, ArrayList<Thread>> threadMap = Map.of(
                 "commLoc", threadsCommLoc,
@@ -534,13 +540,7 @@ public class Mutator {
         }
     }
 
-    private boolean canApplyLocModifier(Location location, String operator) {
-        if (operator.equals("commLoc") && !location.getType().equals(Location.LocationType.COMMITTED)) {
-            return true;
-        }
-        else return operator.equals("urgLoc") && !location.getType().equals(Location.LocationType.URGENT);
-    }
-    public void prepareLocModifierOp(String operator) {
+    /*public void prepareLocModifierOp(String operator) {
         ArrayList<Integer> locations = listener.getLocations();
         Map<String, ArrayList<Thread>> threadMap = Map.of(
                 "commLoc", threadsCommLoc,
@@ -566,8 +566,8 @@ public class Mutator {
             }, operator + "_" + finalI+".xml"));
             i++;
         }
-    }
-    public void prepareUBOperator(String prefix) {
+    }*/
+    public void prepareUBOperatorOld(String prefix) {
         // A prefix is one of...
         String[] prefixes = {"broadcast", "urgent"};
         if (!prefixes[0].equals(prefix) && !prefixes[1].equals(prefix)) {
@@ -607,18 +607,70 @@ public class Mutator {
         }
     }
 
-    public void prepareDelSyncOperator() {
-        // iterate through all automata of mutant
-        for (Automaton taio : this.nta.getAutomata()) {
-            // iterate through all transitions of taio
-            ArrayList<Transition> ogTransitions = taio.getTransitions();
-            // Using classic for instead of for-each because we need to modify elements without affecting this.nta.
-            for (int i = 0; i < ogTransitions.size(); i++) {
-                handleTransitionDelSync(ogTransitions.get(i), i);
+    private boolean canPerformUBOp(Channel.ChanType cType, String prefix) {
+        if (prefix.equals("broadcast") && !cType.equals(Channel.ChanType.BROADCAST)) {
+            return true;
+        }
+        return prefix.equals("urgent") && !cType.equals(Channel.ChanType.URGENT);
+    }
+
+    private boolean isValidPrefix(String prefix) {
+        return Arrays.asList("broadcast", "urgent").contains(prefix);
+    }
+
+    private Channel.ChanType getChannelType(String prefix) {
+        if (prefix.equals("broadcast")) {
+            return Channel.ChanType.BROADCAST;
+        } else if (prefix.equals("urgent")) {
+            return Channel.ChanType.URGENT;
+        } else {
+            throw new IllegalArgumentException("Invalid prefix: " + prefix);
+        }
+    }
+
+    private String makeMutantPath(Channel channel, String operator) {
+        String fileName = operator + "_" + channel.getName() + ".xml";
+        return this.fileMutants.getPath() + File.separator + fileName;
+    }
+
+    private void updateChannelDeclaration(NTA mutant, Channel channel, String prefix) {
+        for (ListIterator i = mutant.getDeclarations().getStrings().listIterator(); i.hasNext(); ) {
+            String d = (String) i.next();
+            if (d.contains("chan") && d.contains(channel.getName())) {
+                i.set(d.replaceFirst(",(\\s)*" + channel.getName(), ""));
+                break;
+            }
+        }
+        mutant.getDeclarations().add(prefix + " chan " + channel.getName() + ";");
+    }
+    public void prepareUBOperator(String prefix) {
+        if (!isValidPrefix(prefix)) {
+            throw new IllegalArgumentException("Invalid prefix " + prefix + " operator urg/broadChan.");
+        }
+
+        Map<String, ArrayList<Thread>> threadMap = Map.of(
+                "broadcast", threadsBroadChan,
+                "urgent", threadsUrgChan
+        );
+
+        Channel.ChanType type = getChannelType(prefix);
+
+        for (Channel channel : this.nta.populateChannels().values()) {
+            NTA mutant = new NTA(this.nta.getAbsoluteModelPath());
+            Channel.ChanType ogType = channel.getType();
+            if (canPerformUBOp(ogType, prefix)) {
+                Channel chan = mutant.populateChannels().get(channel.getName());
+                chan.setType(type);
+
+                updateChannelDeclaration(mutant, chan, prefix);
+
+                String path = makeMutantPath(chan, prefix);
+                threadMap.get(prefix).add(new Thread(() -> mutant.writeModelToFile(path), path));
             }
         }
     }
 
+    /** Start DelSync **/
     private void handleTransitionDelSync(Transition transition, int idx) {
         Synchronization sync = transition.getSync();
         if (sync != null && !sync.toString().isEmpty()) {
@@ -647,7 +699,7 @@ public class Mutator {
                 for (Transition t2 : ta.getTransitions()) {
                     if (t2.getSync() != null && !t2.getSync().toString().isEmpty()) {
                         if (t2.getSync().getChannelName().equals(t1.getSync().getChannelName())
-                            && t1.getSync().getSyncType() != t2.getSync().getSyncType())
+                                && t1.getSync().getSyncType() != t2.getSync().getSyncType())
                         { // a matching transition is found
                             String fileName = "delSync_" + automatonName + "_"+ta.getName()+"_"+t1.getSync().getChannelName()+".xml";
                             t2.setSync(null);
@@ -661,7 +713,6 @@ public class Mutator {
             }
         }
     }
-
     private void processSync(Transition transition, int idx, boolean guideline) {
         NTA mutant = new NTA(this.nta.getModelPath());
         String taioName = transition.getAutomaton().getName().toString();
@@ -679,6 +730,17 @@ public class Mutator {
             String filePath = this.fileMutants.getPath() + File.separator + fileName;
 
             threadsDelSyncNG.add(new Thread(() -> mutant.writeModelToFile(filePath), fileName));
+        }
+    }
+    public void prepareDelSyncOperator() {
+        // iterate through all automata of mutant
+        for (Automaton taio : this.nta.getAutomata()) {
+            // iterate through all transitions of taio
+            ArrayList<Transition> ogTransitions = taio.getTransitions();
+            // Classic for instead of for-each because we need to modify elements without affecting this.nta.
+            for (int i = 0; i < ogTransitions.size(); i++) {
+                handleTransitionDelSync(ogTransitions.get(i), i);
+            }
         }
     }
 
@@ -716,6 +778,7 @@ public class Mutator {
         }
     }
 */
+    /* Start parSeq*/
     public void prepareParSeqOperator() {
         Set<String> chanNames = listener.getChanToTemplate().keySet();
         // Only interested in global channels.
@@ -748,7 +811,45 @@ public class Mutator {
             }
         }
     }
+
+    private List<String> getClocks(NTA mutant) {
+        return mutant.getDeclarations().getStrings()
+                .stream()
+                .filter(decl -> decl.contains("clock"))
+                .map(decl -> decl.trim().replaceAll("clock|;", ""))
+                .collect(Collectors.toList());
+    }
+
+    private boolean clockAlreadyExists(Automaton automaton, String clock) {
+        return automaton.getDeclaration().getStrings().
+                stream().anyMatch(x -> x.startsWith("clock") && x.contains(clock));
+    }
+
+    private String makePathMaskVarClocks(Automaton automaton, String clockName) {
+        String filename = "maskVarClock_" + clockName + "_"+ automaton.getName() + ".xml";
+        return fileMutants + File.separator + filename;
+    }
     public void prepareMaskVarClocksOp() {
+        for (String clockDecl : getClocks(this.nta)) {
+            for (String clock : clockDecl.split(",")) {
+                for (Automaton automaton : this.nta.getAutomata()) {
+                    String clockName = clock.trim();
+                    if (!clockAlreadyExists(automaton, clockName)) {
+                        NTA mutant = new NTA(this.nta.getAbsoluteModelPath());
+                        mutant.getAutomaton(automaton.getName().toString())
+                                .getDeclaration()
+                                .add("clock " + clockName + ";");
+
+                        threadsMaskVarClocks.add(
+                                new Thread(() -> mutant.writeModelToFile(makePathMaskVarClocks(automaton, clockName)),
+                                        makePathMaskVarClocks(automaton, clockName))
+                        );
+                    }
+                }
+            }
+        }
+    }
+    /*public void prepareMaskVarClocksOpOld() {
         HashMap<String, ArrayList<String>> clockToTemplate = listener.getClockToTemplate();
         for (var entry: clockToTemplate.entrySet()) {
             String declaration = entry.getValue().remove(0);
@@ -771,9 +872,34 @@ public class Mutator {
                 }, "MaskVarClock_" + entry.getKey() + "_" + template + ".xml"));
             }
         }
-    }
+    }*/
 
+    private String computeMaskVarChanPath(Automaton automaton, Channel channel) {
+        String filename = "MaskVarChannel_" + channel.getName() + "_" + automaton.getName() + ".xml";
+        return fileMutants + File.separator + filename;
+    }
     public void prepareMaskVarChannelsOp() {
+        for (Channel channel : this.channels.values()) {
+            for (Automaton automaton : this.nta.getAutomata()) {
+                //todo: check if channel is declared in automaton.
+                NTA mutant = new NTA(this.nta.getAbsoluteModelPath());
+                String chanDecl = String.format(
+                        "%s chan %s;",
+                        channel.getType().toString().toLowerCase(),
+                        channel.getName()
+                );
+
+                mutant.getAutomaton(automaton.getName().toString())
+                        .getDeclaration()
+                        .add(chanDecl);
+
+                threadsMaskVarChannels.add(new Thread(()-> {
+                    mutant.writeModelToFile(computeMaskVarChanPath(automaton, channel));
+                }, computeMaskVarChanPath(automaton, channel)));
+            }
+        }
+    }
+    /*public void prepareMaskVarChannelsOpold() {
         HashMap<String, ArrayList<String>> globalChans = listener.getChanToTemplate();
         for (var entry : globalChans.entrySet()) {
             String declaration = entry.getValue().remove(0);
@@ -796,7 +922,7 @@ public class Mutator {
                 }, "MaskVarChannel_" + entry.getKey() + "_" +template + ".xml"));
             }
         }
-    }
+    }*/
     public void prepareDelOutput() {
         for (String chan : listener.getChanToTemplate().keySet()) {
             int count = 0;
