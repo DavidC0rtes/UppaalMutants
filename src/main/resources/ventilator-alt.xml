@@ -189,7 +189,7 @@ o2WithoutAir=airflow-o2InAir</label>
 	</template>
 	<template>
 		<name>Control</name>
-		<parameter>int pInsp, int pExp, int tInsp, int tExp,  int totalT,  broadcast chan  &amp;supplyOff,  broadcast chan &amp;mix, broadcast chan  &amp;O2on, broadcast chan  &amp;airOn</parameter>
+		<parameter>int pInsp, int pExp, int tInsp, int tExp,  int totalT</parameter>
 		<declaration>clock  pause;
 //clock a;
 int waitd = fint(dt*100); // wait duration, the value of dt in cs.
@@ -260,7 +260,7 @@ Q=0</label>
 		<transition id="id24">
 			<source ref="id22"/>
 			<target ref="id11"/>
-			<label kind="synchronisation" x="-195" y="-493">mix!</label>
+			<label kind="synchronisation" x="-195" y="-493">mixSupply!</label>
 			<label kind="assignment" x="-195" y="-476">a=0</label>
 		</transition>
 		<transition id="id25">
@@ -354,7 +354,7 @@ p2=p2+getDelta()</label>
 	</template>
 	<template>
 		<name>Injector</name>
-		<parameter> broadcast chan &amp;mixed,  broadcast chan  &amp;turnOff, broadcast chan &amp;turnOn, int[0,100] &amp;duty, int &amp;mix</parameter>
+		<parameter>broadcast chan &amp;turnOn, int[0,100] &amp;duty, int &amp;mix</parameter>
 		<declaration>clock t;
 
 /**
@@ -396,7 +396,7 @@ int getFlowWithPassage(int n){
 		<transition id="id42">
 			<source ref="id41"/>
 			<target ref="id41"/>
-			<label kind="synchronisation" x="272" y="8">mixed?</label>
+			<label kind="synchronisation" x="272" y="8">mixSupply?</label>
 			<label kind="assignment" x="272" y="25">mix=getFlowWithPassage(duty)</label>
 			<nail x="272" y="68"/>
 			<nail x="331" y="68"/>
@@ -411,31 +411,70 @@ int getFlowWithPassage(int n){
 		<transition id="id44">
 			<source ref="id40"/>
 			<target ref="id41"/>
-			<label kind="synchronisation" x="153" y="136">turnOn?</label>
+			<label kind="synchronisation" x="153" y="136">airOn?</label>
 			<label kind="assignment" x="161" y="161">t=0</label>
+		</transition>
+	</template>
+	<template>
+		<name>O2Valve</name>
+		<parameter>int[0,100] &amp;duty, int &amp;mix</parameter>
+		<declaration>clock t;
+int params[11] = {0,50,100,120,220,280,350,380,410,450,500};
+
+int getFlowWithPassage(int n){
+    return params[n/10];
+}</declaration>
+		<location id="id45" x="-433" y="-42">
+			<name x="-458" y="-25">off</name>
+		</location>
+		<location id="id46" x="-212" y="-42">
+			<name x="-220" y="-25">on</name>
+			<label kind="invariant" x="-221" y="-8">t&lt;=tInsp</label>
+		</location>
+		<init ref="id45"/>
+		<transition id="id47">
+			<source ref="id46"/>
+			<target ref="id46"/>
+			<label kind="synchronisation" x="-229" y="-161">mixSupply?</label>
+			<label kind="assignment" x="-229" y="-144">mix=getFlowWithPassage(duty)</label>
+			<nail x="-229" y="-101"/>
+			<nail x="-170" y="-101"/>
+		</transition>
+		<transition id="id48">
+			<source ref="id46"/>
+			<target ref="id45"/>
+			<label kind="guard" x="-348" y="-144">t&gt;=tInsp</label>
+			<label kind="assignment" x="-348" y="-161">t=0</label>
+			<nail x="-322" y="-127"/>
+		</transition>
+		<transition id="id49">
+			<source ref="id45"/>
+			<target ref="id46"/>
+			<label kind="synchronisation" x="-348" y="-33">O2on?</label>
+			<label kind="assignment" x="-340" y="-8">t=0</label>
 		</transition>
 	</template>
 	<template>
 		<name>ExpValve</name>
 		<declaration>//clock time;</declaration>
-		<location id="id45" x="0" y="0">
+		<location id="id50" x="0" y="0">
 			<name x="-42" y="-8">off</name>
 		</location>
-		<location id="id46" x="221" y="0">
+		<location id="id51" x="221" y="0">
 			<name x="238" y="-8">on</name>
 			<label kind="invariant" x="238" y="8">timeExpV&lt;=tExp</label>
 		</location>
-		<init ref="id45"/>
-		<transition id="id47">
-			<source ref="id46"/>
-			<target ref="id45"/>
+		<init ref="id50"/>
+		<transition id="id52">
+			<source ref="id51"/>
+			<target ref="id50"/>
 			<label kind="synchronisation" x="76" y="-110">expOff?</label>
 			<label kind="assignment" x="76" y="-93">timeExpV=0</label>
 			<nail x="110" y="-76"/>
 		</transition>
-		<transition id="id48">
-			<source ref="id45"/>
-			<target ref="id46"/>
+		<transition id="id53">
+			<source ref="id50"/>
+			<target ref="id51"/>
 			<label kind="synchronisation" x="68" y="0">expOn?</label>
 			<label kind="assignment" x="68" y="17">timeExpV=0</label>
 		</transition>
@@ -446,18 +485,17 @@ config = Setup(flowrate, FiO2, airDuty, o2Duty);
 
 int mix=0;
 
-o2Valve = Injector(mixSupply, supplyOff, O2on, o2Duty, mix);
-airValve = Injector(mixSupply, supplyOff, airOn, airDuty, mix);
+o2Valve = O2Valve(o2Duty, mix);
+airValve = Injector(airOn, airDuty, mix);
 
 /**
 expiration valve
 **/
 expValve = ExpValve();
 
-Ventilator = Control(pInsp,pExp,tInsp,tExp, totalT, supplyOff, mixSupply, O2on, airOn);
+Ventilator = Control(pInsp,pExp,tInsp,tExp, totalT);
 
-system  config, o2Valve, airValve, expValve, Ventilator;
-</system>
+system  config, o2Valve, airValve, expValve, Ventilator;</system>
 	<queries>
 		<option key="--state-representation" value="1"/>
 		<option key="--diagnostic" value="0"/>
@@ -465,7 +503,7 @@ system  config, o2Valve, airValve, expValve, Ventilator;
 			<formula>A[] not deadlock</formula>
 			<comment>At every stage, at least one transition will be eventually enabled. 
 </comment>
-			<result outcome="success" type="quality" timestamp="2023-10-25 04:43:36 +0200">
+			<result outcome="success" type="quality" timestamp="2023-11-05 22:26:34 +0100">
 				<option key="--state-representation" value="1"/>
 				<option key="--diagnostic" value="0"/>
 			</result>
