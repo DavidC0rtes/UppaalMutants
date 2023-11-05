@@ -111,9 +111,9 @@ public class OptionsArgs {
                 "Enables the DelSync operator. Deletes an arbitrary input action."
         );
         Option parSeqOpt = new Option(
-                "parSeq",
+                "syncSeq",
                 false,
-                "Enables the ParSeq operator. Two parallel actions become sequential."
+                "Enables the SyncSeq operator. Two parallel actions become sequential."
         );
 
         Option maskVarClocks = Option.builder("maskVarClocks")
