@@ -8,7 +8,7 @@ FiO2: Fraction of inspirated oxygen, given in percentage of oxygen in the air
 **/
 int[0,500] flowrate = 12;
 int[1,100] FiO2 = 10;
-
+int mix=0;
 /**
 Duty: The opening of the injector's valve, where 100 is fully opened and 0 is fully closed.
 **/
@@ -79,7 +79,6 @@ clock a, timeExpV;
 </declaration>
 	<template>
 		<name x="5" y="5">Setup</name>
-		<parameter>int[0,500] &amp;airflow, int[1,100] &amp;FiO2, int[0,100] &amp;dutyAir,int[0,100] &amp;dutyO2</parameter>
 		<declaration>clock t;
 /**
 Injector workcycle configuration
@@ -166,19 +165,19 @@ big_t setPressure1(int airflow) {
 			<source ref="id3"/>
 			<target ref="id4"/>
 			<label kind="synchronisation" x="578" y="68">endSetup!</label>
-			<label kind="assignment" x="578" y="85">p1=setPressure1(airflow)</label>
+			<label kind="assignment" x="578" y="85">p1=setPressure1(flowrate)</label>
 		</transition>
 		<transition id="id7">
 			<source ref="id2"/>
 			<target ref="id3"/>
-			<label kind="assignment" x="391" y="-59">dutyAir=getDuty(o2WithoutAir),
-dutyO2=getDuty(o2InAir)</label>
+			<label kind="assignment" x="391" y="-59">airDuty=getDuty(o2WithoutAir),
+o2Duty=getDuty(o2InAir)</label>
 		</transition>
 		<transition id="id8">
 			<source ref="id1"/>
 			<target ref="id2"/>
-			<label kind="assignment" x="144" y="42">o2InAir=fint((airflow*FiO2)/100),
-o2WithoutAir=airflow-o2InAir</label>
+			<label kind="assignment" x="144" y="42">o2InAir=fint((flowrate*FiO2)/100),
+o2WithoutAir=flowrate-o2InAir</label>
 		</transition>
 		<transition id="id9">
 			<source ref="id0"/>
@@ -189,7 +188,6 @@ o2WithoutAir=airflow-o2InAir</label>
 	</template>
 	<template>
 		<name>Control</name>
-		<parameter>int pInsp, int pExp, int tInsp, int tExp,  int totalT</parameter>
 		<declaration>clock  pause;
 //clock a;
 int waitd = fint(dt*100); // wait duration, the value of dt in cs.
@@ -354,7 +352,6 @@ p2=p2+getDelta()</label>
 	</template>
 	<template>
 		<name>Injector</name>
-		<parameter>broadcast chan &amp;turnOn, int[0,100] &amp;duty, int &amp;mix</parameter>
 		<declaration>clock t;
 
 /**
@@ -390,21 +387,21 @@ int getFlowWithPassage(int n){
 		</location>
 		<location id="id41" x="289" y="127">
 			<name x="281" y="144">on</name>
-			<label kind="invariant" x="280" y="161">t&lt;=tInsp</label>
+			<label kind="invariant" x="280" y="161">t&lt;=100</label>
 		</location>
 		<init ref="id40"/>
 		<transition id="id42">
 			<source ref="id41"/>
 			<target ref="id41"/>
 			<label kind="synchronisation" x="272" y="8">mixSupply?</label>
-			<label kind="assignment" x="272" y="25">mix=getFlowWithPassage(duty)</label>
+			<label kind="assignment" x="272" y="25">mix=getFlowWithPassage(airDuty)</label>
 			<nail x="272" y="68"/>
 			<nail x="331" y="68"/>
 		</transition>
 		<transition id="id43">
 			<source ref="id41"/>
 			<target ref="id40"/>
-			<label kind="guard" x="153" y="25">t&gt;=tInsp</label>
+			<label kind="guard" x="153" y="25">t&gt;=100</label>
 			<label kind="assignment" x="153" y="8">t=0</label>
 			<nail x="179" y="42"/>
 		</transition>
@@ -417,7 +414,6 @@ int getFlowWithPassage(int n){
 	</template>
 	<template>
 		<name>O2Valve</name>
-		<parameter>int[0,100] &amp;duty, int &amp;mix</parameter>
 		<declaration>clock t;
 int params[11] = {0,50,100,120,220,280,350,380,410,450,500};
 
@@ -429,21 +425,21 @@ int getFlowWithPassage(int n){
 		</location>
 		<location id="id46" x="-212" y="-42">
 			<name x="-220" y="-25">on</name>
-			<label kind="invariant" x="-221" y="-8">t&lt;=tInsp</label>
+			<label kind="invariant" x="-221" y="-8">t&lt;=100</label>
 		</location>
 		<init ref="id45"/>
 		<transition id="id47">
 			<source ref="id46"/>
 			<target ref="id46"/>
 			<label kind="synchronisation" x="-229" y="-161">mixSupply?</label>
-			<label kind="assignment" x="-229" y="-144">mix=getFlowWithPassage(duty)</label>
+			<label kind="assignment" x="-229" y="-144">mix=getFlowWithPassage(o2Duty)</label>
 			<nail x="-229" y="-101"/>
 			<nail x="-170" y="-101"/>
 		</transition>
 		<transition id="id48">
 			<source ref="id46"/>
 			<target ref="id45"/>
-			<label kind="guard" x="-348" y="-144">t&gt;=tInsp</label>
+			<label kind="guard" x="-348" y="-144">t&gt;=100</label>
 			<label kind="assignment" x="-348" y="-161">t=0</label>
 			<nail x="-322" y="-127"/>
 		</transition>
@@ -462,7 +458,7 @@ int getFlowWithPassage(int n){
 		</location>
 		<location id="id51" x="221" y="0">
 			<name x="238" y="-8">on</name>
-			<label kind="invariant" x="238" y="8">timeExpV&lt;=tExp</label>
+			<label kind="invariant" x="238" y="8">timeExpV&lt;=225</label>
 		</location>
 		<init ref="id50"/>
 		<transition id="id52">
@@ -481,605 +477,25 @@ int getFlowWithPassage(int n){
 	</template>
 	<system>//flowrate, FiO2, inputs
 //airDuty, o2Duty, outputs
-config = Setup(flowrate, FiO2, airDuty, o2Duty);
+//config = Setup(flowrate, FiO2, airDuty, o2Duty);
 
-int mix=0;
-
-o2Valve = O2Valve(o2Duty, mix);
-airValve = Injector(airOn, airDuty, mix);
+//o2Valve = O2Valve(o2Duty, mix);
+//airValve = Injector(airOn, airDuty, mix);
 
 /**
 expiration valve
 **/
-expValve = ExpValve();
+//expValve = ExpValve();
 
-Ventilator = Control(pInsp,pExp,tInsp,tExp, totalT);
+//Ventilator = Control(pInsp,pExp,tInsp,tExp, totalT);
 
-system  config, o2Valve, airValve, expValve, Ventilator;</system>
+system  Setup, O2Valve, Injector, ExpValve, Control;</system>
 	<queries>
-		<option key="--state-representation" value="1"/>
-		<option key="--diagnostic" value="0"/>
 		<query>
-			<formula>A[] not deadlock</formula>
-			<comment>At every stage, at least one transition will be eventually enabled. 
-</comment>
-			<result outcome="success" type="quality" timestamp="2023-11-05 22:26:34 +0100">
-				<option key="--state-representation" value="1"/>
-				<option key="--diagnostic" value="0"/>
-			</result>
-		</query>
-		<query>
-			<formula>E&lt;&gt; Ventilator.Insp</formula>
-			<comment>It is possible to reach the inspiration state.</comment>
-			<result outcome="success" type="quality" timestamp="2023-09-06 05:09:08 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="0"/>
-			</result>
-		</query>
-		<query>
-			<formula>E&lt;&gt; Ventilator.Exp</formula>
-			<comment>It is possible to reach the expiration state.</comment>
-			<result outcome="success" type="quality" timestamp="2023-09-06 05:09:12 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="0"/>
-			</result>
-		</query>
-		<query>
-			<formula>E&lt;&gt; Ventilator.ExpPause</formula>
+			<formula>E&lt;&gt; Control.ExpPause</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-09-06 06:07:19 +0200">
-				<option key="--state-representation" value="1"/>
-				<option key="--diagnostic" value="0"/>
+			<result outcome="success" type="quality" timestamp="2023-12-13 06:05:10 +0100">
 			</result>
-		</query>
-		<query>
-			<formula>E&lt;&gt; Ventilator.InsPause</formula>
-			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-09-06 05:10:13 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="0"/>
-			</result>
-		</query>
-		<query>
-			<formula>A[] (not (o2Valve.on or airValve.on) or expValve.off)</formula>
-			<comment>If there is an inspiration injector on, then the expiration valve is closed.</comment>
-			<result outcome="success" type="quality" timestamp="2023-09-06 05:11:04 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="0"/>
-			</result>
-		</query>
-		<query>
-			<formula>E&lt;&gt; o2Valve.on or airValve.on</formula>
-			<comment>It is possible to reach states where injectors are on. 
-This property also verifies that the previous property has a possible antecedent.</comment>
-			<result outcome="success" type="quality" timestamp="2023-09-06 05:12:22 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="0"/>
-			</result>
-		</query>
-		<query>
-			<formula>A[] (not expValve.on or (o2Valve.off and airValve.off))</formula>
-			<comment>For every path, if the expiration valve is on, both injectors
-must be off.</comment>
-			<result outcome="success" type="quality" timestamp="2023-09-06 05:13:19 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="0"/>
-			</result>
-		</query>
-		<query>
-			<formula>E&lt;&gt; expValve.on</formula>
-			<comment>It is possible to reach a state where the expiration valve
-is on. This property also verifies that the previous property
-has a possible antecedent.</comment>
-			<result outcome="success" type="quality" timestamp="2023-09-06 05:13:45 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="0"/>
-			</result>
-		</query>
-		<query>
-			<formula>A[] (not expValve.on or (timeExpV&lt;=tExp))</formula>
-			<comment>The expiration valve never lasts more than the configured
-duration for the expiration phase (tExp) turned on</comment>
-			<result outcome="success" type="quality" timestamp="2023-09-06 05:15:04 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="0"/>
-			</result>
-		</query>
-		<query>
-			<formula>A[] (not (o2Valve.on and airValve.on) or (o2Valve.t&lt;=tInsp))</formula>
-			<comment>The oxygen and air injectors are never on for more than
-the configured inspiration time (tInsp).</comment>
-			<result outcome="success" type="quality" timestamp="2023-09-06 06:04:31 +0200">
-				<option key="--state-representation" value="1"/>
-				<option key="--diagnostic" value="0"/>
-			</result>
-		</query>
-		<query>
-			<formula>Pr[a &lt;= tInsp-1;500](&lt;&gt; Ventilator.Exp)</formula>
-			<comment>Tells the probability of leaving the inspiration state too early. This is a safety property to ensure the patient receives air to her lungs
-at the appropriate time.</comment>
-			<result outcome="success" type="interval" value="≤ 0.00735061 (95% CI)" timestamp="2023-09-06 05:16:54 +0200">
-				<option key="--state-representation" value="0"/>
-				<option key="--diagnostic" value="0"/>
-				<details>≤ 0.00735061 (95% CI)</details>
-			</result>
-		</query>
-		<query>
-			<formula>Pr[a &lt;= (totalT+pExp)] (&lt;&gt; Ventilator.ExpPause)</formula>
-			<comment/>
-			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-09-06 06:07:10 +0200">
-				<option key="--state-representation" value="1"/>
-				<option key="--diagnostic" value="0"/>
-				<details>≥ 0.950056 (95% CI)</details>
-				<plot title="Probability Density Distribution" xaxis="a" yaxis="probability density">
-					<series title="density" type="b(0.787129)" color="0x0000ff" encoding="csv">325.0119031742215,0.22938488809577623
-325.7990324269566,0.17644991391982787
-326.5861616796917,0.19409490531181067
-327.37329093242687,0.1588049225278451
-328.16042018516197,0.1588049225278451
-328.94754943789707,0.12351493974387952
-329.73467869063217,0.10586994835189673
-330.5218079433673,0.05293497417594836
-331.3089371961024,0.07057996556793115
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">327.81125231195864,0.0
-327.81125231195864,0.22938488809577623
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.78713, bucket count=9
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [325.012, 332.096]
-Mean estimate of displayed sample: 327.811 ± 0.442113 (95% CI)</comment>
-				</plot>
-				<plot title="Probability Density Confidence Intervals" xaxis="a" yaxis="probability density">
-					<series title="upper limit" type="b(0.787129)" color="0xa0a0ff" encoding="csv">325.0119031742215,0.2889434084029285
-325.7990324269566,0.24062593250302433
-326.5861616796917,0.2569401232482781
-327.37329093242687,0.22407193574325335
-328.16042018516197,0.22407193574325335
-328.94754943789707,0.19011034044555922
-329.73467869063217,0.172608584683674
-330.5218079433673,0.11697481982594136
-331.3089371961024,0.13617864931292403
-					</series>
-					<series title="lower limit" type="b(0.787129)" color="0x0000ff" encoding="csv">325.0119031742215,0.09979350815289616
-325.7990324269566,0.06866420769681664
-326.5861616796917,0.07881196318794174
-327.37329093242687,0.05878331705656036
-328.16042018516197,0.05878331705656036
-328.94754943789707,0.039989500933602505
-329.73467869063217,0.031197509141384482
-330.5218079433673,0.008676497316343764
-331.3089371961024,0.015342537111130598
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">327.81125231195864,0.0
-327.81125231195864,0.3670850846908685
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.78713, bucket count=9
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [325.012, 332.096]
-Mean estimate of displayed sample: 327.811 ± 0.442113 (95% CI)</comment>
-				</plot>
-				<plot title="Probability Distribution" xaxis="a" yaxis="probability">
-					<series title="probability" type="b(0.787129)" color="0x0000ff" encoding="csv">325.0119031742215,0.18055555555555555
-325.7990324269566,0.1388888888888889
-326.5861616796917,0.1527777777777778
-327.37329093242687,0.125
-328.16042018516197,0.125
-328.94754943789707,0.09722222222222222
-329.73467869063217,0.08333333333333333
-330.5218079433673,0.041666666666666664
-331.3089371961024,0.05555555555555555
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">327.81125231195864,0.0
-327.81125231195864,0.18055555555555555
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.78713, bucket count=9
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [325.012, 332.096]
-Mean estimate of displayed sample: 327.811 ± 0.442113 (95% CI)</comment>
-				</plot>
-				<plot title="Probability Confidence Intervals" xaxis="a" yaxis="probability">
-					<series title="upper limit" type="b(0.787129)" color="0xa0a0ff" encoding="csv">325.0119031742215,0.2889434084029285
-325.7990324269566,0.24062593250302433
-326.5861616796917,0.2569401232482781
-327.37329093242687,0.22407193574325335
-328.16042018516197,0.22407193574325335
-328.94754943789707,0.19011034044555922
-329.73467869063217,0.172608584683674
-330.5218079433673,0.11697481982594136
-331.3089371961024,0.13617864931292403
-					</series>
-					<series title="lower limit" type="b(0.787129)" color="0x0000ff" encoding="csv">325.0119031742215,0.09979350815289616
-325.7990324269566,0.06866420769681664
-326.5861616796917,0.07881196318794174
-327.37329093242687,0.05878331705656036
-328.16042018516197,0.05878331705656036
-328.94754943789707,0.039989500933602505
-329.73467869063217,0.031197509141384482
-330.5218079433673,0.008676497316343764
-331.3089371961024,0.015342537111130598
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">327.81125231195864,0.0
-327.81125231195864,0.2889434084029285
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.78713, bucket count=9
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [325.012, 332.096]
-Mean estimate of displayed sample: 327.811 ± 0.442113 (95% CI)</comment>
-				</plot>
-				<plot title="Cumulative Probability Distribution" xaxis="a" yaxis="probability">
-					<series title="cumulative" type="l" color="0x000000" encoding="csv">325.0119031742215,0.0
-325.7990324269566,0.18055555555555555
-326.5861616796917,0.3194444444444444
-327.37329093242687,0.4722222222222222
-328.16042018516197,0.5972222222222222
-328.94754943789707,0.7222222222222222
-329.73467869063217,0.8194444444444444
-330.5218079433673,0.9027777777777778
-331.3089371961024,0.9444444444444444
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">327.81125231195864,0.0
-327.81125231195864,1.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.78713, bucket count=9
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [325.012, 332.096]
-Mean estimate of displayed sample: 327.811 ± 0.442113 (95% CI)</comment>
-				</plot>
-				<plot title="Cumulative Probability Confidence Intervals" xaxis="a" yaxis="probability">
-					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">325.0119031742215,0.04994408370585468
-325.7990324269566,0.2889434084029285
-326.5861616796917,0.439858436528534
-327.37329093242687,0.5934709234743262
-328.16042018516197,0.7112079862392012
-328.94754943789707,0.8213571188477201
-329.73467869063217,0.9002064918471039
-330.5218079433673,0.9600104990663975
-331.3089371961024,0.9846574628888694
-					</series>
-					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">325.0119031742215,0.0
-325.7990324269566,0.09979350815289616
-326.5861616796917,0.21441793608731277
-327.37329093242687,0.35332972405667146
-328.16042018516197,0.47497988455265755
-328.94754943789707,0.604094181767964
-329.73467869063217,0.7110565915970716
-330.5218079433673,0.8098896595544408
-331.3089371961024,0.863821350687076
-					</series>
-					<series title="cumulative" type="l" color="0x000000" encoding="csv">325.0119031742215,0.0
-325.7990324269566,0.18055555555555555
-326.5861616796917,0.3194444444444444
-327.37329093242687,0.4722222222222222
-328.16042018516197,0.5972222222222222
-328.94754943789707,0.7222222222222222
-329.73467869063217,0.8194444444444444
-330.5218079433673,0.9027777777777778
-331.3089371961024,0.9444444444444444
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">327.81125231195864,0.0
-327.81125231195864,1.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.78713, bucket count=9
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [325.012, 332.096]
-Mean estimate of displayed sample: 327.811 ± 0.442113 (95% CI)</comment>
-				</plot>
-				<plot title="Frequency Histogram" xaxis="a" yaxis="count">
-					<series title="count" type="b(0.787129)" color="0x0000ff" encoding="csv">325.0119031742215,13.0
-325.7990324269566,10.0
-326.5861616796917,11.0
-327.37329093242687,9.0
-328.16042018516197,9.0
-328.94754943789707,7.0
-329.73467869063217,6.0
-330.5218079433673,3.0
-331.3089371961024,4.0
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">327.81125231195864,0.0
-327.81125231195864,13.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.78713, bucket count=9
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [325.012, 332.096]
-Mean estimate of displayed sample: 327.811 ± 0.442113 (95% CI)</comment>
-				</plot>
-			</result>
-		</query>
-		<query>
-			<formula>simulate[&lt;=totalT]{Q}</formula>
-			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-09-06 06:03:29 +0200">
-				<option key="--state-representation" value="1"/>
-				<option key="--diagnostic" value="0"/>
-				<plot title="Simulations (1)" xaxis="time" yaxis="value">
-					<series title="Q" type="l" color="0xff0000" encoding="csv">0.0,0.0
-52.0831666495651,0.0
-52.0831666495651,292621.0
-54.45969493500888,292621.0
-54.45969493500888,291010.0
-61.46323630027473,291010.0
-61.46323630027473,289409.0
-65.06190303526819,289409.0
-65.06190303526819,287816.0
-72.71481652371585,287816.0
-72.71481652371585,286232.0
-77.77367062494159,286232.0
-77.77367062494159,284657.0
-80.26153049059212,284657.0
-80.26153049059212,283090.0
-86.9791348632425,283090.0
-86.9791348632425,281532.0
-94.65914562344551,281532.0
-94.65914562344551,279984.0
-98.86763774044812,279984.0
-98.86763774044812,278443.0
-99.0408475510776,278443.0
-99.0408475510776,276911.0
-99.23955020494759,276911.0
-99.23955020494759,275387.0
-104.11722951941192,275387.0
-104.11722951941192,273873.0
-108.87147624790668,273873.0
-108.87147624790668,272366.0
-109.20491844601929,272366.0
-109.20491844601929,270866.0
-115.0338800791651,270866.0
-115.0338800791651,269376.0
-120.68767207488418,269376.0
-120.68767207488418,267894.0
-122.05879947543144,267894.0
-122.05879947543144,266419.0
-128.24653999507427,266419.0
-128.24653999507427,264953.0
-133.89523060806096,264953.0
-133.89523060806096,263495.0
-139.17496227659285,263495.0
-139.17496227659285,262045.0
-141.11611219495535,262045.0
-141.11611219495535,260604.0
-147.75853285193443,260604.0
-147.75853285193443,259170.0
-150.34572880901396,259170.0
-150.34572880901396,0.0
-202.06790485295525,0.0
-202.06790485295525,-492675.0
-202.17739384513246,-492675.0
-202.17739384513246,-465564.0
-205.73316900311625,-465564.0
-205.73316900311625,-439940.0
-205.89667411830084,-439940.0
-205.93571330677077,-415727.0
-205.93571330677077,-392849.0
-206.77731196890522,-392849.0
-206.77731196890522,-371232.0
-209.9413216272812,-371232.0
-209.9413216272812,-350800.0
-210.07015806704396,-350800.0
-210.07015806704396,-331497.0
-210.1992763810306,-331497.0
-210.1992763810306,-313248.0
-210.58093219818997,-313248.0
-210.58093219818997,-296015.0
-212.09220478638986,-296015.0
-212.09220478638986,-279722.0
-212.47512560661693,-279722.0
-212.47512560661693,-264332.0
-213.00996552886676,-264332.0
-213.00996552886676,-249789.0
-215.96452890992558,-249789.0
-215.982694117608,-236037.0
-215.982694117608,-223055.0
-216.16088305501597,-223055.0
-216.16088305501597,-210789.0
-216.47657548774393,-210789.0
-216.48920737433218,-199199.0
-216.48920737433218,-188250.0
-216.72901579939173,-188250.0
-216.72901579939173,-177902.0
-221.2424112813632,-177902.0
-221.2424112813632,-168119.0
-221.4304638535424,-168119.0
-221.4304638535424,-158863.0
-221.66096199884603,-158863.0
-221.66096199884603,-150133.0
-222.04091078324984,-150133.0
-222.04091078324984,-141874.0
-222.2680473565323,-141874.0
-222.2680473565323,-134066.0
-222.45076586091434,-134066.0
-222.4540728467592,-126691.0
-222.4540728467592,-119730.0
-224.03240967256664,-119730.0
-224.03240967256664,-113145.0
-226.0685988212717,-113145.0
-226.0685988212717,-106918.0
-227.04550025350085,-106918.0
-227.04550025350085,-101048.0
-230.21656944789538,-101048.0
-230.21656944789538,-95498.0
-231.45728604838612,-95498.0
-231.45728604838612,-90249.0
-232.4325616363678,-90249.0
-232.4325616363678,-85282.0
-234.2232928459135,-85282.0
-234.2232928459135,-80598.0
-236.28173312177123,-80598.0
-236.28173312177123,-76176.0
-237.23376652484612,-76176.0
-237.23376652484612,-72000.0
-238.5199476088177,-72000.0
-238.559158612176,-68049.0
-238.559158612176,-64305.0
-238.86799483723755,-64305.0
-238.86799483723755,-60768.0
-240.25857422546878,-60768.0
-240.25857422546878,-57438.0
-240.58382965173624,-57438.0
-240.58382965173624,-54277.0
-241.9573434433309,-54277.0
-241.9573434433309,-51305.0
-242.1184136558633,-51305.0
-242.1184136558633,-48482.0
-242.8312678930363,-48482.0
-242.8312678930363,-45830.0
-247.74193738452828,-45830.0
-247.74193738452828,-43309.0
-247.92687567978956,-43309.0
-247.92687567978956,-40938.0
-248.31410582341545,-40938.0
-248.31410582341545,-38699.0
-249.4054914125764,-38699.0
-249.4054914125764,-36573.0
-250.3940235863951,-36573.0
-250.3940235863951,-34560.0
-250.85600076971625,-34560.0
-250.85600076971625,-32660.0
-250.96553899752914,-32660.0
-250.96553899752914,-30873.0
-251.63563813901146,-30873.0
-251.63563813901146,-29180.0
-252.59529363858965,-29180.0
-252.59529363858965,-27580.0
-253.71530493033572,-27580.0
-253.71530493033572,-26075.0
-254.4377498814725,-26075.0
-254.4377498814725,-24645.0
-256.63890316072496,-24645.0
-256.63890316072496,-23291.0
-256.80090425609194,-23291.0
-256.80090425609194,-22012.0
-256.90368149030934,-22012.0
-256.94257671245873,-20807.0
-256.94257671245873,-19679.0
-257.26490033235973,-19679.0
-257.26490033235973,-18606.0
-257.6365054385585,-18606.0
-257.6365054385585,-17590.0
-258.33216315991933,-17590.0
-258.33216315991933,-16631.0
-258.51208834189146,-16631.0
-258.51208834189146,-15728.0
-260.1200156863063,-15728.0
-260.1200156863063,-14862.0
-260.271206248061,-14862.0
-260.271206248061,-14053.0
-260.3740339625283,-14053.0
-260.3740339625283,-13282.0
-262.0584808901214,-13282.0
-262.0584808901214,-12567.0
-264.4365291623491,-12567.0
-264.4365291623491,-11890.0
-264.84663018074855,-11890.0
-264.84663018074855,-11250.0
-265.98820794542553,-11250.0
-265.98820794542553,-10648.0
-267.7684892323072,-10648.0
-267.7684892323072,-10065.0
-268.27632845216067,-10065.0
-268.27632845216067,-9519.0
-268.5949075977628,-9519.0
-268.5949075977628,-9011.0
-268.991615644058,-9011.0
-268.991615644058,-8522.0
-270.24845042046496,-8522.0
-270.24845042046496,-8071.0
-270.3765358941068,-8071.0
-270.3765358941068,-7638.0
-271.1610597953002,-7638.0
-271.1610597953002,-7224.0
-272.7518637951073,-7224.0
-272.7518637951073,-6829.0
-274.5826614235064,-6829.0
-274.5826614235064,-6471.0
-275.5334710441055,-6471.0
-275.5334710441055,-6133.0
-276.3115529755735,-6133.0
-276.3115529755735,-5813.0
-277.20094810088176,-5813.0
-277.20094810088176,-5493.0
-277.8782693752417,-5493.0
-277.8782693752417,-5192.0
-278.07104980533524,-5192.0
-278.07104980533524,-4910.0
-279.02860807068845,-4910.0
-279.02860807068845,-4646.0
-283.5024553261258,-4646.0
-283.5024553261258,-4402.0
-283.6617130164597,-4402.0
-283.6617130164597,-4176.0
-283.8957505737266,-4176.0
-283.8957505737266,-3950.0
-288.3488912522722,-3950.0
-288.3488912522722,-3743.0
-290.46147799524533,-3743.0
-290.46147799524533,-3555.0
-294.4128452181901,-3555.0
-294.4128452181901,-3367.0
-296.2120403537953,-3367.0
-296.2120403537953,-3198.0
-296.94380920067925,-3198.0
-296.94380920067925,-3029.0
-299.7382444803184,-3029.0
-299.7382444803184,-2878.0
-300.539211244507,-2878.0
-300.539211244507,-2727.0
-301.02605993697233,-2727.0
-301.02605993697233,-2596.0
-302.9780231854081,-2596.0
-302.9780231854081,-2464.0
-303.27120099330455,-2464.0
-303.34575821989756,-2332.0
-303.34575821989756,-2220.0
-304.950603119352,-2220.0
-304.950603119352,-2107.0
-306.3023813961302,-2107.0
-306.3023813961302,-1994.0
-306.5753285147656,-1994.0
-306.5753285147656,-1900.0
-306.9443017555045,-1900.0
-306.9443017555045,-1806.0
-313.36462497927033,-1806.0
-313.36462497927033,-1712.0
-313.59284521318176,-1712.0
-313.59284521318176,-1617.0
-314.0918362788142,-1617.0
-314.0918362788142,-1542.0
-314.7241174064107,-1542.0
-314.7241174064107,-1467.0
-315.0725147560671,-1467.0
-315.0725147560671,-1392.0
-317.20975764458717,-1392.0
-317.20975764458717,-1316.0
-317.46156114273225,-1316.0
-317.46156114273225,-1260.0
-317.6969046099221,-1260.0
-317.6969046099221,-1204.0
-320.34416765681647,-1204.0
-320.34416765681647,-1147.0
-321.31317984684136,-1147.0
-321.31317984684136,-1091.0
-321.4240620944292,-1091.0
-321.4240620944292,-1034.0
-322.9636437651235,-1034.0
-322.9636437651235,-978.0
-323.3672868823283,-978.0
-323.3672868823283,-940.0
-324.09542655658305,-940.0
-324.09542655658305,-903.0
-325.0,-903.0
-					</series>
-					<comment/>
-				</plot>
-			</result>
-		</query>
-		<query>
-			<formula>E[&lt;=totalT;500](max:Q)</formula>
-			<comment/>
-		</query>
-		<query>
-			<formula>E[&lt;=totalT;500](min:Q)</formula>
-			<comment/>
 		</query>
 	</queries>
 </nta>

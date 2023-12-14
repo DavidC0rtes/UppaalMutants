@@ -81,20 +81,26 @@ x:=0</label>
 	<template>
 		<name x="40" y="16">Gate</name>
 		<location id="id5" x="288" y="192">
+			<name x="278" y="158">mid</name>
 			<committed/>
 		</location>
 		<location id="id6" x="256" y="384">
+			<name x="246" y="350">l</name>
 			<committed/>
 		</location>
 		<location id="id7" x="192" y="224">
+			<name x="182" y="190">b</name>
 			<committed/>
 		</location>
 		<location id="id8" x="192" y="160">
+			<name x="182" y="126">a</name>
 		</location>
 		<location id="id9" x="96" y="96">
+			<name x="86" y="62">c</name>
 			<committed/>
 		</location>
 		<location id="id10" x="128" y="384">
+			<name x="118" y="350">q</name>
 			<committed/>
 		</location>
 		<location id="id11" x="192" y="288">

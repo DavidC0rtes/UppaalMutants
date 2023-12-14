@@ -264,6 +264,7 @@ r = 0</label>
 			<committed/>
 		</location>
 		<location id="id8" x="32" y="216">
+			<name x="22" y="182">midpoint1</name>
 			<label kind="exponentialrate" x="22" y="250">1</label>
 		</location>
 		<location id="id9" x="32" y="288">
@@ -275,6 +276,7 @@ r = 0</label>
 			<label kind="exponentialrate" x="22" y="434">1</label>
 		</location>
 		<location id="id11" x="-40" y="344">
+			<name x="-50" y="310">midpoint2</name>
 			<committed/>
 		</location>
 		<init ref="id6"/>
