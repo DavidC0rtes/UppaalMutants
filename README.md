@@ -1,20 +1,21 @@
-# Uppaal Mutants
+# Time for Networks: Mutation Testing for Timed Automata Networks
 
-This repository contains a Model-Based Mutation Testing tool for Uppaal.
+This repository contains the tools used in the article to perform MBMT in UPPAAL NTAIO models.
 
 ## Requirements
 
-In order to use the tool you should have installed the following tools:
+In order to use the tool you must have the following tools installed :
 
-- OpenJDK 1.8.0_302 (Version that we have tested. 
-However, our tool could be run on other versions of java. 
-Although in case of problems, we recommend using this version)
+- OpenJDK 11
+- UPPAAL 5.0
+However, our tool may run on other versions of java. 
+Although in case of problems, we recommend using this version.
 
-## Usage
+## UppaalMutants
+Mutates the specified model using the given mutation operators.
 
+### Usage
 To use the Model-Based Mutation Testing prototype, follow the instructions:
-
-
 ```
 usage: java -jar MutationUppaal.jar [OPTION]...
 Where [-m <file>] model is a required option
@@ -33,45 +34,47 @@ only with the model
                            indicated).
  -l,--log                  Produce a file that contains a record of
                            generated mutants in mutant folder.
- -tmi                      Enable tmi operator. Transition MIssing
-                           operator removes a transition.
- -tad                      Enable tad operator. Transition ADd operator
-                           adds a transition between two states. This
-                           operator make an internal action (tau/siilent).
-                           The new transitions will not be where the
-                           automaton already had another transition
- -tadSync <action>         Enable tad operator. Transition ADd operator
-                           adds a transition between two states. This
-                           operator use the specified action as an output
-                           action (action!). Be sure the action is on the
-                           environment of the system to verify it. The new
-                           transitions will not be where the automaton
-                           already had another external transition
- -tadRandomSync            Enable tad operator. Transition ADd operator
-                           adds a transition between two states. This
-                           operator use a random channel on the
-                           environment as an output action (a!). The new
-                           transitions will not be where the automaton
-                           already had another external transition
- -smi                      Enable smi operator. State MIssing operator
-                           removes a state (other than the initial state)
-                           and all its incoming/outgoing transitions.
- -smiNoRedundant           Enable smi operator. State MIssing operator
-                           removes a state (other than the initial state)
-                           and all its incoming/outgoing transitions. This
-                           operator avoid some redundant mutants with the
-                           tmi operator. Generate a subset of smi mutants
- -cxl                      Enable cxl operator. Constant eXchange L
-                           operator increases the constant of a clock
-                           constraint.
- -cxs                      Enable cxs operator. Constant eXchange S
-                           operator decreases the constant of a clock
-                           constraint.
- -ccn                      Enable ccn operator. Clock Constraint Negation
-                           operator negates a clock constraint.
+ -broadChan                Enable broadChan operator. Adds the broadcast
+                           prefix to an existing channel.
+ -delSync                  Enables the DelSync operator. Deletes an
+                           arbitrary input action.
+ -syncSeq                  Enables the SyncSeq operator. Two parallel
+                           actions become sequential.
+ -maskVarClocks            Enables the maskvar operator over clocks.
+ -maskVarChannels          Enables the maskvar operator over channels.
+ -urgChan                  Enable the urgChan operator. Adds the urgent
+                           prefix to an existing channel.
+ -commLoc                  Enables the commLoc operator. One location
+                           becomes commited.
+ -urgLoc                   Enables the urgLoc operator. One location
+                           becomes urgent.
  -env <action>             Specify the name of the automaton to make the
                            mutants
--m,--model <path> is a required option
-Try `java -jar MutationUppaal.jar -h' for more information.
-
+ -all                      Enables all operators.
 ```
+#### Example
+`java -jar UppaalMutants.jar -m=CA.xml -all -p=Mutant/CA`
+## NTAMorphosis
+This tool can perform bisimulation and traces inclusion using biased and random traces. However, for this work we only used
+the bisimulation feature.
+### Usage
+```
+Usage: NTAMorphosis [-htV] [-dup] [-eq] [--[no-]gui] [-csvb=<csvBisim>]
+                    [-csvt=<csvTracesPath>] [-dir=<outPath>] [--how=<strategy>]
+                    [-m=<model>] [--td=<tracesDir>] [-op=<operators>]...
+                    [[-n=<nTraces>] [-k=<timeBound>]]
+    -csvb, --csv-bisim=<csvBisim>
+                             Path to the output CSV file for bisimulation
+                               results.
+    -dir, --mutants-dir=<outPath>
+                             Directory containing mutant files.
+    -dup, --duplicates     Compute bisimulation between mutants.
+    -eq, --equivalent      Compute bisimulation w/ respect to the original
+                               model.
+  -h, --help                 Show this help message and exit.
+  -m, --model=<model>        Path to model's file.
+  -V, --version              Print version information and exit.
+```
+#### Example
+To run the CA case study:
+`java -jar NTAMorphosis.jar -m=CA.xml -dir=src/CA-mutants -dup -csvb=reports/ca-dups-nta.csv`
