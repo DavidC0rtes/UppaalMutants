@@ -129,10 +129,10 @@ public class EntryPoint {
                 new BroadChan(mutator),
                 new UrgChan(mutator),
                 new DelSync(mutator),
-                //new SyncSeq(mutator),
+                new SyncSeq(mutator),
                 new MaskVarClocks(mutator),
                 new MaskVarChannels(mutator),
-                new DelOutput(mutator),
+                //new DelOutput(mutator),
                 new CommLoc(mutator),
                 new UrgLoc(mutator),
                 new ReplaceMsg(mutator)

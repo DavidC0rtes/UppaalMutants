@@ -9,7 +9,9 @@ import Parser.Mutation.UppaalVisitor;
 import Parser.NTAExtension.ExtendedListener;
 import be.unamur.uppaal.juppaal.*;
 import be.unamur.uppaal.juppaal.declarations.Channel;
+import be.unamur.uppaal.juppaal.labels.Guard;
 import be.unamur.uppaal.juppaal.labels.Synchronization;
+import be.unamur.uppaal.juppaal.labels.Update;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -20,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -107,7 +110,7 @@ public class Mutator {
         this.threadsCcn = new ArrayList<>();
         this.threadsBroadChan = new ArrayList<>();
 
-        parseModel(modelFile, envTarget);
+        //parseModel(modelFile, envTarget);
         this.nta = new NTA(modelFile);
         this.channels = nta.populateChannels();
     }
@@ -127,7 +130,7 @@ public class Mutator {
         info = info.concat("broadChan ").concat(Integer.toString(this.threadsBroadChan.size())).concat("\n");
         info = info.concat("delSync ").concat(Integer.toString(this.threadsDelSync.size())).concat("\n");
         info = info.concat("delSyncNG ").concat(Integer.toString(this.threadsDelSyncNG.size())).concat("\n");
-        info = info.concat("parSeq ").concat(Integer.toString(this.threadsParSeq.size())).concat("\n");
+        info = info.concat("syncSeq ").concat(Integer.toString(this.threadsParSeq.size())).concat("\n");
         info = info.concat("maskVarClocks ").concat(Integer.toString(this.threadsMaskVarClocks.size())).concat("\n");
         info = info.concat("maskVarChannels ").concat(Integer.toString(this.threadsMaskVarChannels.size())).concat("\n");
         info = info.concat("urgChan ").concat(Integer.toString(this.threadsUrgChan.size())).concat("\n");
@@ -628,11 +631,14 @@ public class Mutator {
         }
     }
 
-    private String makeMutantPath(Channel channel, String operator) {
+    private String makeMutantPath(Channel channel, String prefix) {
+        String operator = prefix.equals("urgent")
+                ? "urgentChan"
+                : "broadChan";
+
         String fileName = operator + "_" + channel.getName() + ".xml";
         return this.fileMutants.getPath() + File.separator + fileName;
     }
-
     private void updateChannelDeclaration(NTA mutant, Channel channel, String prefix) {
         for (ListIterator i = mutant.getDeclarations().getStrings().listIterator(); i.hasNext(); ) {
             String d = (String) i.next();
@@ -641,7 +647,23 @@ public class Mutator {
                 break;
             }
         }
-        mutant.getDeclarations().add(prefix + " chan " + channel.getName() + ";");
+        String newPrefix = "";
+        switch (prefix) {
+            case "broadcast":
+                if (!channel.getType().equals(Channel.ChanType.BROADCAST)) {
+                    newPrefix = prefix;
+                }
+                break;
+            case "urgent":
+                if (!channel.getType().equals(Channel.ChanType.URGENT)) {
+                    newPrefix = prefix;
+                }
+                break;
+            default:
+                logger.error("Invalid prefix {}", prefix);
+                break;
+        }
+        mutant.getDeclarations().add(newPrefix + " chan " + channel.getName() + ";");
     }
     public void prepareUBOperator(String prefix) {
         if (!isValidPrefix(prefix)) {
@@ -658,15 +680,13 @@ public class Mutator {
         for (Channel channel : this.nta.populateChannels().values()) {
             NTA mutant = new NTA(this.nta.getAbsoluteModelPath());
             Channel.ChanType ogType = channel.getType();
-            if (canPerformUBOp(ogType, prefix)) {
                 Channel chan = mutant.populateChannels().get(channel.getName());
-                chan.setType(type);
+                //chan.setType(type);
 
                 updateChannelDeclaration(mutant, chan, prefix);
 
                 String path = makeMutantPath(chan, prefix);
                 threadMap.get(prefix).add(new Thread(() -> mutant.writeModelToFile(path), path));
-            }
         }
     }
 
@@ -674,7 +694,11 @@ public class Mutator {
     private void handleTransitionDelSync(Transition transition, int idx) {
         Synchronization sync = transition.getSync();
         if (sync != null && !sync.toString().isEmpty()) {
-            Channel chan = channels.get(sync.getPureChannelName());
+            String syncName = sync.getChannelName();
+            if (!channels.containsKey(syncName))
+                throw new NoSuchElementException("Channel "+syncName+" not found.");
+
+            Channel chan = channels.get(syncName);
             // if the channel is not binary, we only delete the receiver to prevent deadlocks.
             if (chan.getType() != Channel.ChanType.BINARY) {
                 if (Objects.requireNonNull(sync.getSyncType()) == Synchronization.SyncType.RECEIVER) {
@@ -779,7 +803,7 @@ public class Mutator {
     }
 */
     /* Start parSeq*/
-    public void prepareParSeqOperator() {
+    public void prepareParSeqOperatorold() {
         Set<String> chanNames = listener.getChanToTemplate().keySet();
         // Only interested in global channels.
         ArrayList<ChanType> candidates = parser.getChannelEnv().get("Global");
@@ -809,6 +833,49 @@ public class Mutator {
                     counter++;
                 }
             }
+        }
+    }
+
+    private void parSeqTranModifier(Transition transition, Synchronization.SyncType type) {
+
+        int k = ThreadLocalRandom.current().nextInt(1, 5 + 1);
+        if (type.equals(Synchronization.SyncType.INITIATOR)) {
+            transition.setUpdate(new Update(String.format("x := %d", k)));
+            transition.getSource().setType(Location.LocationType.COMMITTED);
+            //remove sync if channel is binary to prevent deadlocks.
+            if (channels.get(transition.getSync().getChannelName()).getType().equals(Channel.ChanType.BINARY)) {
+                transition.setSync(null);
+            }
+        } else {
+            transition.setSync(null);
+            transition.setGuard(new Guard(String.format("x > %d", k)));
+        }
+    }
+    public void prepareParSeqOperator() {
+        for (Channel channel : channels.values()) {
+            NTA mutant = new NTA(this.nta.getAbsoluteModelPath());
+
+            List<Transition> syncTransitions = mutant.getTransitionsForChannel(channel);
+            if (syncTransitions.size() < 2) {
+                continue;
+            }
+
+            mutant.getDeclarations().add("clock x;");
+            syncTransitions
+                    .stream()
+                    .filter(it -> it.getSync().getSyncType() == Synchronization.SyncType.INITIATOR)
+                    .findFirst().ifPresent(it -> parSeqTranModifier(it, it.getSync().getSyncType()));;
+
+            syncTransitions
+                    .stream()
+                    .filter(it -> it.getSync().getSyncType() == Synchronization.SyncType.RECEIVER)
+                    .findFirst().ifPresent(t -> parSeqTranModifier(t, t.getSync().getSyncType()));
+
+            threadsParSeq.add(new Thread(() -> mutant.writeModelToFile(
+                    this.fileMutants.getPath() + "/" + "syncSeq_" + channel.getName() + ".xml"),
+                    "syncSeq_" + channel.getName() + ".xml")
+            );
+
         }
     }
 
@@ -949,7 +1016,6 @@ public class Mutator {
             }
         }
     }
-
 
     public void prepareTmiOperator(){
         for (int i : parser.getTmi()) {
