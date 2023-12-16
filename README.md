@@ -8,6 +8,7 @@ In order to use the tool you must have the following tools installed :
 
 - OpenJDK 11
 - UPPAAL 5.0
+
 However, our tool may run on other versions of java. 
 Although in case of problems, we recommend using this version.
 
@@ -55,8 +56,8 @@ only with the model
 #### Example
 `java -jar UppaalMutants.jar -m=CA.xml -all -p=Mutant/CA`
 ## NTAMorphosis
-This tool can perform bisimulation and traces inclusion using biased and random traces. However, for this work we only used
-the bisimulation feature.
+This tool can perform a bisimulation comparison between sets of mutants and a given model, by calling a 
+3rd party bisimulation algorithm, usually loaded via CLI argument.
 ### Usage
 ```
 Usage: NTAMorphosis [-htV] [-dup] [-eq] [--[no-]gui] [-csvb=<csvBisim>]
@@ -73,6 +74,7 @@ Usage: NTAMorphosis [-htV] [-dup] [-eq] [--[no-]gui] [-csvb=<csvBisim>]
                                model.
   -h, --help                 Show this help message and exit.
   -m, --model=<model>        Path to model's file.
+  -b, --bisim-tool           Path to bisimulation jar.
   -V, --version              Print version information and exit.
 ```
 #### Example
